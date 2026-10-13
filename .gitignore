@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+android-app/node_modules/
+
+# Next.js Build
+.next/
+out/
+
+# Mobile Web Distribution
+android-app/dist/
+
+# Android Gradle & Build Files
+android-app/android/.gradle/
+android-app/android/build/
+android-app/android/app/build/
+android-app/android/local.properties
+android-app/android/.idea/
+android-app/android/*.iml
+android-app/android/app/*.iml
+
+# Environment Variables & Local Secrets
+.env
+.env.local
+.env.*.local
+
+# Local SQLite Database
+prisma/dev.db
+prisma/dev.db-journal
+dev.db
+dev.db-journal
+
+# Logs & Temporary Files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

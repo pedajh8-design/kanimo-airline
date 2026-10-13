@@ -1,0 +1,193 @@
+// Prisma schema for Kanimo Airline Ticketing Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  password        String
+  name            String
+  phone           String?
+  role            String           @default("CUSTOMER") // "CUSTOMER", "STAFF", "ADMIN"
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  orders          Order[]
+  tickets         Ticket[]
+  supportTickets  SupportTicket[]
+  supportComments SupportComment[]
+  auditLogs       AuditLog[]
+}
+
+model Flight {
+  id              String       @id @default(uuid())
+  flightNumber    String       @unique // e.g., "KN-101"
+  airline         String       @default("Kanimo Airline")
+  aircraft        String       @default("Boeing 787-9 Dreamliner")
+  origin          String       // e.g., "New York (JFK)"
+  originCode      String       // "JFK"
+  originCity      String       // "New York"
+  destination     String       // e.g., "London Heathrow (LHR)"
+  destinationCode String       // "LHR"
+  destinationCity String       // "London"
+  departureTime   DateTime
+  arrivalTime     DateTime
+  duration        String       // e.g., "7h 15m"
+  status          String       @default("SCHEDULED") // "SCHEDULED", "BOARDING", "DEPARTED", "ARRIVED", "CANCELLED", "DELAYED"
+  terminal        String?      @default("Terminal 4")
+  gate            String?      @default("B22")
+  category        String       @default("International") // "Domestic", "International", "Luxury Charter", "Regional Express"
+  imageUrl        String?
+  description     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  tiers           TicketTier[]
+  orders          Order[]
+  tickets         Ticket[]
+}
+
+model TicketTier {
+  id            String      @id @default(uuid())
+  flightId      String
+  flight        Flight      @relation(fields: [flightId], references: [id], onDelete: Cascade)
+  name          String      // "Economy Class", "Premium Economy", "Business Class", "First Royal"
+  cabinClass    String      // "ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"
+  price         Float
+  capacity      Int         // Total seats available for this tier
+  reservedCount Int         @default(0) // Concurrency-safe reserved seats
+  soldCount     Int         @default(0)
+  benefits      String      // JSON or comma separated string of inclusions
+  baggage       String      @default("1 Checked Bag (23kg), 1 Carry-on")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  orderItems    OrderItem[]
+  tickets       Ticket[]
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique // e.g., "ORD-202610-8472"
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flightId        String
+  flight          Flight      @relation(fields: [flightId], references: [id])
+  totalAmount     Float
+  status          String      @default("PENDING") // "PENDING", "PAID", "CANCELLED", "REFUNDED"
+  paymentMethod   String      @default("DEMO_PAYMENT") // "DEMO_PAYMENT", "STRIPE"
+  passengerCount  Int         @default(1)
+  contactEmail    String
+  contactPhone    String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items           OrderItem[]
+  payment         Payment?
+  tickets         Ticket[]
+}
+
+model OrderItem {
+  id             String      @id @default(uuid())
+  orderId        String
+  order          Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ticketTierId   String
+  ticketTier     TicketTier  @relation(fields: [ticketTierId], references: [id])
+  passengerName  String
+  passengerEmail String?
+  passportNumber String?
+  seatNumber     String?     // Assigned seat (e.g., 14A)
+  seatPreference String?     @default("Window")
+  unitPrice      Float
+  createdAt      DateTime    @default(now())
+
+  ticket         Ticket?
+}
+
+model Payment {
+  id                String    @id @default(uuid())
+  orderId           String    @unique
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount            Float
+  currency          String    @default("USD")
+  provider          String    @default("DEMO") // "DEMO", "STRIPE"
+  providerPaymentId String    @unique // Transaction ref or Stripe payment intent
+  status            String    @default("SUCCEEDED") // "SUCCEEDED", "FAILED", "PENDING", "REFUNDED"
+  idempotencyKey    String?   @unique
+  cardLast4         String?   @default("4242")
+  cardBrand         String?   @default("Visa")
+  receiptUrl        String?
+  metadata          String?   // JSON representation of raw provider webhook/response
+  createdAt         DateTime  @default(now())
+}
+
+model Ticket {
+  id                 String     @id @default(uuid())
+  ticketNumber       String     @unique // e.g., "TKT-KN-94829103"
+  orderId            String
+  order              Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItemId        String     @unique
+  orderItem          OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  flightId           String
+  flight             Flight     @relation(fields: [flightId], references: [id])
+  ticketTierId       String
+  ticketTier         TicketTier @relation(fields: [ticketTierId], references: [id])
+  userId             String
+  user               User       @relation(fields: [userId], references: [id])
+  passengerName      String
+  seatNumber         String     // e.g. "12F"
+  boardingGroup      String     @default("Group B")
+  qrSecurityPayload  String     // Cryptographically signed ticket validation token
+  securityHash       String     // HMAC-SHA256 signature to prevent counterfeit
+  status             String     @default("ISSUED") // "ISSUED", "CHECKED_IN", "CANCELLED", "BOARDED"
+  checkedInAt        DateTime?
+  checkedInByStaffId String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model SupportTicket {
+  id          String           @id @default(uuid())
+  ticketCode  String           @unique // e.g., "SUP-10824"
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId     String?
+  subject     String
+  category    String           @default("GENERAL") // "BOOKING_CHANGE", "CANCELLATION", "BAGGAGE", "SEAT_UPGRADE", "PAYMENT", "GENERAL"
+  priority    String           @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "URGENT"
+  status      String           @default("OPEN") // "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  comments    SupportComment[]
+}
+
+model SupportComment {
+  id              String        @id @default(uuid())
+  supportTicketId String
+  supportTicket   SupportTicket @relation(fields: [supportTicketId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  message         String
+  isStaffReply    Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String   // "TICKET_CHECKED_IN", "ORDER_CREATED", "FLIGHT_UPDATED", "REFUND_ISSUED", "LOGIN"
+  entityType String   // "TICKET", "ORDER", "FLIGHT", "USER", "PAYMENT"
+  entityId   String
+  details    String?  // JSON details
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+}

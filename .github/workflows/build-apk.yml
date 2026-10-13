@@ -1,0 +1,47 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Allows 1-click manual build directly in GitHub UI
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java 17 (Required for Android Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Mobile Dependencies & Build Assets
+        run: |
+          cd android-app
+          npm install
+          npm run build
+          npx cap sync android
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x android-app/android/gradlew
+
+      - name: Build Debug APK via Gradle
+        run: |
+          cd android-app/android
+          ./gradlew assembleDebug
+
+      - name: Upload APK for Direct Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: kanimo-airline-apk
+          path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
