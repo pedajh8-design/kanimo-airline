@@ -1,0 +1,5 @@
+# Ignore Android client and APK artifacts from Vercel deployment
+android-app
+build-artifacts
+kanimo-airline-debug.apk
+tests
