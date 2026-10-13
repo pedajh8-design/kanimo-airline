@@ -325,6 +325,12 @@ The mobile application is located in the `android-app/` directory and is built u
 - `android-app/capacitor.config.ts`: Capacitor configuration binding package ID `com.kanimo.airline`.
 - `android-app/android/`: Complete Native Android project with Gradle wrapper, AndroidManifest, and Java source.
 
+### ⚡ Ready-to-Install APK File
+A verified 4.0 MB debug APK has been compiled via GitHub Actions CI/CD and is saved locally:
+- **Local APK Path**: [`kanimo-airline-debug.apk`](file:///home/kanimo/Desktop/KANIMO%20AIRLINE/kanimo-airline-debug.apk) (or in [`build-artifacts/kanimo-airline-apk/app-debug.apk`](file:///home/kanimo/Desktop/KANIMO%20AIRLINE/build-artifacts/kanimo-airline-apk/app-debug.apk))
+- **GitHub Repository**: [https://github.com/pedajh8-design/kanimo-airline](https://github.com/pedajh8-design/kanimo-airline)
+- **Cloud Build Runs & Artifacts**: [https://github.com/pedajh8-design/kanimo-airline/actions](https://github.com/pedajh8-design/kanimo-airline/actions)
+
 ### 1. Mobile Development & Asset Sync
 ```bash
 cd android-app
