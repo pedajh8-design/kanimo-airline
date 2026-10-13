@@ -419,6 +419,13 @@ export default function App() {
             <div className="space-y-1.5 text-[11px] text-slate-400">
               <button
                 type="button"
+                onClick={() => setCustomApiUrl('http://192.168.1.102:3000')}
+                className="w-full text-left px-2 py-1 bg-slate-800 rounded hover:bg-slate-700 block text-emerald-300 font-medium"
+              >
+                📶 Wi-Fi Phone: http://192.168.1.102:3000
+              </button>
+              <button
+                type="button"
                 onClick={() => setCustomApiUrl('http://10.0.2.2:3000')}
                 className="w-full text-left px-2 py-1 bg-slate-800 rounded hover:bg-slate-700 block text-blue-300"
               >
