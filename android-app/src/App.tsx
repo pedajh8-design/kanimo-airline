@@ -28,12 +28,14 @@ export default function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState<'explore' | 'wallet' | 'orders' | 'support' | 'profile'>('explore');
 
-  // API Config (Defaults to current window host or Android emulator loopback 10.0.2.2:3000)
-  const [apiBaseUrl, setApiBaseUrl] = useState(() => {
-    return localStorage.getItem('kanimo_api_url') || 'https://kanimo-airline.vercel.app';
-  });
+  // Authoritative production backend URL - permanently fixed to live Vercel endpoint
+  const apiBaseUrl = 'https://kanimo-airline.vercel.app';
   const [showSettings, setShowSettings] = useState(false);
-  const [customApiUrl, setCustomApiUrl] = useState(apiBaseUrl);
+
+  useEffect(() => {
+    // Clear any previous faulty local URL overrides so the app always connects to live cloud
+    localStorage.removeItem('kanimo_api_url');
+  }, []);
 
   // Auth State
   const [user, setUser] = useState<any>(() => {
@@ -122,11 +124,6 @@ export default function App() {
     }
   }, [selectedTicket]);
 
-  const saveApiUrl = (url: string) => {
-    setApiBaseUrl(url);
-    localStorage.setItem('kanimo_api_url', url);
-    setShowSettings(false);
-  };
 
   // ----------------------------------------------------
   // API Calls
@@ -364,8 +361,11 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* Top Status & Brand Header */}
-      <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between z-20 flex-shrink-0">
+      {/* Top Status & Brand Header with Safe Area Inset */}
+      <header 
+        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 38px)' }}
+        className="bg-slate-900 border-b border-slate-800 px-4 pb-3 flex items-center justify-between z-20 flex-shrink-0 shadow-md"
+      >
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
             <Plane className="w-4 h-4 text-white transform -rotate-45" />
@@ -378,95 +378,29 @@ export default function App() {
           </div>
         </div>
 
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-emerald-400 font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Cloud
+          </span>
+        </div>
       </header>
 
       {/* Network Alert Banner */}
       {networkError && (
-        <div className="bg-rose-950 border-b border-rose-800 px-4 py-2 text-[11px] text-rose-300 flex items-center justify-between">
+        <div className="bg-rose-950/90 border-b border-rose-800 px-4 py-2 text-[11px] text-rose-300 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <WifiOff className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Server unreachable at {apiBaseUrl}. Configure API Host in settings.</span>
+            <span>Connection issue. Connecting to cloud...</span>
           </div>
-          <button onClick={() => setShowSettings(true)} className="underline font-bold ml-2">
-            Settings
+          <button onClick={() => fetchFlights()} className="underline font-bold ml-2 px-2 py-0.5 rounded bg-rose-900/50">
+            Retry
           </button>
         </div>
       )}
 
-      {/* Settings Modal (API host changer) */}
-      {showSettings && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-3xl max-w-sm w-full p-6 border border-slate-800 space-y-4 shadow-2xl">
-            <h3 className="font-bold text-sm text-white">Backend Server URL</h3>
-            <p className="text-xs text-slate-400">
-              Configure the API host the Android client connects to:
-            </p>
-
-            <input
-              type="text"
-              value={customApiUrl}
-              onChange={(e) => setCustomApiUrl(e.target.value)}
-              placeholder="http://10.0.2.2:3000"
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white"
-            />
-
-            <div className="space-y-1.5 text-[11px] text-slate-400">
-              <button
-                type="button"
-                onClick={() => setCustomApiUrl('https://kanimo-airline.vercel.app')}
-                className="w-full text-left px-2 py-1 bg-blue-600/30 border border-blue-500/50 rounded hover:bg-blue-600/50 block text-blue-200 font-bold"
-              >
-                🌐 Live Production: https://kanimo-airline.vercel.app
-              </button>
-              <button
-                type="button"
-                onClick={() => setCustomApiUrl('http://192.168.1.102:3000')}
-                className="w-full text-left px-2 py-1 bg-slate-800 rounded hover:bg-slate-700 block text-emerald-300 font-medium"
-              >
-                📶 Local Wi-Fi: http://192.168.1.102:3000
-              </button>
-              <button
-                type="button"
-                onClick={() => setCustomApiUrl('http://10.0.2.2:3000')}
-                className="w-full text-left px-2 py-1 bg-slate-800 rounded hover:bg-slate-700 block text-blue-300"
-              >
-                📱 Android Emulator: http://10.0.2.2:3000
-              </button>
-              <button
-                type="button"
-                onClick={() => setCustomApiUrl('http://localhost:3000')}
-                className="w-full text-left px-2 py-1 bg-slate-800 rounded hover:bg-slate-700 block text-blue-300"
-              >
-                💻 Web / Localhost: http://localhost:3000
-              </button>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => saveApiUrl(customApiUrl)}
-                className="px-4 py-1.5 bg-blue-600 rounded-xl text-xs font-bold text-white shadow-sm"
-              >
-                Save Server URL
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Screen Content Body */}
-      <main className="flex-1 overflow-y-auto pb-20">
+      <main className="flex-1 overflow-y-auto pb-36">
         {/* ========================================== */}
         {/* TAB 1: EXPLORE / FLIGHTS                   */}
         {/* ========================================== */}
@@ -1348,9 +1282,12 @@ export default function App() {
       )}
 
       {/* ======================================================== */}
-      {/* BOTTOM NAVIGATION BAR                                    */}
+      {/* BOTTOM NAVIGATION BAR WITH SAFE AREA INSET               */}
       {/* ======================================================== */}
-      <nav className="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 px-2 py-2 flex items-center justify-around z-30">
+      <nav 
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 32px)' }}
+        className="fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 pt-2 flex items-center justify-around z-30 shadow-2xl"
+      >
         <button
           onClick={() => setActiveTab('explore')}
           className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition ${
