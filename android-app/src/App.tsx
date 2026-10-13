@@ -30,7 +30,7 @@ export default function App() {
 
   // API Config (Defaults to current window host or Android emulator loopback 10.0.2.2:3000)
   const [apiBaseUrl, setApiBaseUrl] = useState(() => {
-    return localStorage.getItem('kanimo_api_url') || 'http://localhost:3000';
+    return localStorage.getItem('kanimo_api_url') || 'https://kanimo-airline.vercel.app';
   });
   const [showSettings, setShowSettings] = useState(false);
   const [customApiUrl, setCustomApiUrl] = useState(apiBaseUrl);
@@ -419,10 +419,17 @@ export default function App() {
             <div className="space-y-1.5 text-[11px] text-slate-400">
               <button
                 type="button"
+                onClick={() => setCustomApiUrl('https://kanimo-airline.vercel.app')}
+                className="w-full text-left px-2 py-1 bg-blue-600/30 border border-blue-500/50 rounded hover:bg-blue-600/50 block text-blue-200 font-bold"
+              >
+                🌐 Live Production: https://kanimo-airline.vercel.app
+              </button>
+              <button
+                type="button"
                 onClick={() => setCustomApiUrl('http://192.168.1.102:3000')}
                 className="w-full text-left px-2 py-1 bg-slate-800 rounded hover:bg-slate-700 block text-emerald-300 font-medium"
               >
-                📶 Wi-Fi Phone: http://192.168.1.102:3000
+                📶 Local Wi-Fi: http://192.168.1.102:3000
               </button>
               <button
                 type="button"
