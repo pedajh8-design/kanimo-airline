@@ -5,8 +5,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Kanimo Airline | Flight & Event Ticketing Platform',
-  description: 'Book international flights, reserve lie-flat luxury suites, manage digital boarding passes, and access high-security biometric ticket validation with Kanimo Airline.',
+  title: 'SkyTickets | Fly More • Explore More',
+  description: 'Book domestic and international flights, reserve seats, get instant digital boarding passes, and enjoy best price guarantees with SkyTickets.',
 };
 
 export default function RootLayout({

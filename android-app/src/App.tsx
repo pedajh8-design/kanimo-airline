@@ -3,9 +3,6 @@ import QRCode from 'qrcode';
 import {
   Plane,
   Ticket,
-  Luggage,
-  LifeBuoy,
-  User,
   Search,
   Calendar,
   Clock,
@@ -14,1329 +11,1517 @@ import {
   CheckCircle2,
   AlertCircle,
   LogOut,
-  Send,
-  PlusCircle,
   CreditCard,
   Lock,
   RefreshCw,
-  Settings,
-  Wifi,
-  WifiOff,
+  Building2,
+  Bus,
+  ArrowRightLeft,
+  ChevronRight,
+  ChevronLeft,
+  SlidersHorizontal,
+  Bell,
+  User as UserIcon,
+  Luggage,
+  Compass,
+  Check,
+  Smartphone,
+  Landmark,
+  X,
+  Share2,
 } from 'lucide-react';
 
+// Airline Logos / Badges
+function AirlineBadge({ airline, code }: { airline: string; code: string }) {
+  if (airline.includes('Daallo') || code.startsWith('D')) {
+    return (
+      <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-black text-sm shadow-sm shrink-0">
+        <span className="italic tracking-tighter">D</span>
+      </div>
+    );
+  }
+  if (airline.includes('FlySomalia') || code.startsWith('FS')) {
+    return (
+      <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0">
+        <Plane className="w-4 h-4 transform -rotate-45" />
+      </div>
+    );
+  }
+  if (airline.includes('Djibouti') || code.startsWith('AID')) {
+    return (
+      <div className="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0">
+        <span>AID</span>
+      </div>
+    );
+  }
+  // Ethiopian Airlines or partner
+  return (
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-600 via-amber-500 to-rose-600 flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0">
+      <span className="text-[10px]">ET</span>
+    </div>
+  );
+}
+
 export default function App() {
-  // Navigation State
-  const [activeTab, setActiveTab] = useState<'explore' | 'wallet' | 'orders' | 'support' | 'profile'>('explore');
-
-  // Authoritative production backend URL - permanently fixed to live Vercel endpoint
+  // Authoritative production backend URL
   const apiBaseUrl = 'https://kanimo-airline.vercel.app';
-  const [showSettings, setShowSettings] = useState(false);
 
-  useEffect(() => {
-    // Clear any previous faulty local URL overrides so the app always connects to live cloud
-    localStorage.removeItem('kanimo_api_url');
-  }, []);
+  // Navigation State
+  // screen: 'home' | 'search_results' | 'flight_details' | 'select_seat' | 'payment' | 'bookings' | 'explore' | 'profile'
+  const [currentScreen, setCurrentScreen] = useState<string>('home');
+  const [activeBottomTab, setActiveBottomTab] = useState<'home' | 'bookings' | 'explore' | 'profile'>('home');
 
-  // Auth State
-  const [user, setUser] = useState<any>(() => {
-    const saved = localStorage.getItem('kanimo_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('kanimo_token');
-  });
+  // Search State
+  const [searchTab, setSearchTab] = useState<'flights' | 'hotels' | 'bus'>('flights');
+  const [fromCode, setFromCode] = useState('HGA');
+  const [toCode, setToCode] = useState('MGQ');
+  const [depDate, setDepDate] = useState('Nov 15, 2026');
+  const [retDate, setRetDate] = useState('Nov 22, 2026');
+  const [passengers, setPassengers] = useState('1 Adult');
 
-  // Auth Forms
-  const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER' | 'FORGOT'>('LOGIN');
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authName, setAuthName] = useState('');
-  const [authPhone, setAuthPhone] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState('');
-  const [authSuccess, setAuthSuccess] = useState('');
+  // Date strip selection in Search Results
+  const [selectedDateIdx, setSelectedDateIdx] = useState(2); // Sun Nov 15 default
+  const dateStrip = [
+    { day: 'Fri', date: 'Nov 13', price: '$320' },
+    { day: 'Sat', date: 'Nov 14', price: '$298' },
+    { day: 'Sun', date: 'Nov 15', price: '$275' },
+    { day: 'Mon', date: 'Nov 16', price: '$289' },
+    { day: 'Tue', date: 'Nov 17', price: '$310' },
+  ];
 
-  // Data States
-  const [flights, setFlights] = useState<any[]>([]);
-  const [selectedFlight, setSelectedFlight] = useState<any>(null);
-  const [searchOrigin, setSearchOrigin] = useState('');
-  const [searchDest, setSearchDest] = useState('');
-  const [filterClass, setFilterClass] = useState('ALL');
-  const [loadingFlights, setLoadingFlights] = useState(false);
+  // Mockup flight data
+  const defaultFlights = [
+    {
+      id: 'f-d4721',
+      flightNumber: 'D4721',
+      airline: 'Daallo Airlines',
+      from: 'HGA',
+      to: 'MGQ',
+      depTime: '08:30',
+      arrTime: '09:50',
+      duration: '1h 20m',
+      stopType: 'Non-stop',
+      aircraft: 'Boeing 737',
+      classType: 'Economy',
+      price: 275,
+      cabinBaggage: '7 kg',
+      checkedBaggage: '20 kg (included)',
+      baseFare: 240,
+      taxes: 35,
+    },
+    {
+      id: 'f-fs312',
+      flightNumber: 'FS312',
+      airline: 'FlySomalia',
+      from: 'HGA',
+      to: 'MGQ',
+      depTime: '11:15',
+      arrTime: '12:30',
+      duration: '1h 15m',
+      stopType: 'Non-stop',
+      aircraft: 'Boeing 737',
+      classType: 'Economy',
+      price: 298,
+      cabinBaggage: '7 kg',
+      checkedBaggage: '20 kg (included)',
+      baseFare: 260,
+      taxes: 38,
+    },
+    {
+      id: 'f-aid420',
+      flightNumber: 'AID420',
+      airline: 'Air Djibouti',
+      from: 'HGA',
+      to: 'MGQ',
+      depTime: '14:40',
+      arrTime: '16:05',
+      duration: '1h 25m',
+      stopType: 'Non-stop',
+      aircraft: 'Boeing 737',
+      classType: 'Economy',
+      price: 320,
+      cabinBaggage: '7 kg',
+      checkedBaggage: '20 kg (included)',
+      baseFare: 280,
+      taxes: 40,
+    },
+    {
+      id: 'f-et634',
+      flightNumber: 'ET634',
+      airline: 'Ethiopian Airlines',
+      from: 'HGA',
+      to: 'MGQ',
+      depTime: '18:20',
+      arrTime: '19:55',
+      duration: '1h 35m',
+      stopType: 'Non-stop',
+      aircraft: 'Boeing 737',
+      classType: 'Economy',
+      price: 345,
+      cabinBaggage: '7 kg',
+      checkedBaggage: '2x23 kg (included)',
+      baseFare: 300,
+      taxes: 45,
+    },
+  ];
 
-  // Booking Flow in Mobile Modal
-  const [selectedTierId, setSelectedTierId] = useState('');
-  const [passengerName, setPassengerName] = useState('');
-  const [passengerPassport, setPassengerPassport] = useState('');
-  const [seatPreference, setSeatPreference] = useState('Window');
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingError, setBookingError] = useState('');
-  const [bookingSuccess, setBookingSuccess] = useState<any>(null);
+  // Selected Flight in flow
+  const [selectedFlight, setSelectedFlight] = useState<any>(defaultFlights[0]);
 
-  // Tickets Wallet & QR state
-  const [tickets, setTickets] = useState<any[]>(() => {
-    const cached = localStorage.getItem('kanimo_cached_tickets');
-    return cached ? JSON.parse(cached) : [];
-  });
-  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  // Seat Selection State
+  const [selectedSeat, setSelectedSeat] = useState<string>('12A');
+  const seatRows = [8, 9, 10, 11, 12, 13, 14, 15];
+  const occupiedSeats = ['8B', '9E', '10C', '11A', '13F', '14D'];
+
+  // Payment State
+  const [paymentMethod, setPaymentMethod] = useState<'mobile' | 'card' | 'bank'>('mobile');
+  const [mobileNumber, setMobileNumber] = useState('+252 63 445 9988');
+  const [mobileProvider, setMobileProvider] = useState<'ZAAD' | 'EDAHAB'>('ZAAD');
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
+
+  // Bookings State
+  const [bookingFilter, setBookingFilter] = useState<'upcoming' | 'past'>('upcoming');
+  const [bookingsList, setBookingsList] = useState<any[]>([
+    {
+      id: 'b-1',
+      status: 'Confirmed',
+      statusColor: 'emerald',
+      from: 'Hargeisa',
+      fromCode: 'HGA',
+      to: 'Mogadishu',
+      toCode: 'MGQ',
+      date: 'Sun, Nov 15, 2026',
+      passengers: '1 Adult',
+      airline: 'Daallo Airlines',
+      flightNumber: 'D4721',
+      depTime: '08:30',
+      arrTime: '09:50',
+      duration: '1h 20m',
+      seat: '12A',
+      gate: 'A3',
+      terminal: '1',
+      ticketNumber: 'TKT-D4721-12A',
+      isPast: false,
+    },
+    {
+      id: 'b-2',
+      status: 'Ticketed',
+      statusColor: 'blue',
+      from: 'Mogadishu',
+      fromCode: 'MGQ',
+      to: 'Hargeisa',
+      toCode: 'HGA',
+      date: 'Fri, Nov 20, 2026',
+      passengers: '1 Adult',
+      airline: 'FlySomalia',
+      flightNumber: 'FS318',
+      depTime: '15:10',
+      arrTime: '16:30',
+      duration: '1h 20m',
+      seat: '8F',
+      gate: 'B1',
+      terminal: '1',
+      ticketNumber: 'TKT-FS318-8F',
+      isPast: false,
+    },
+    {
+      id: 'b-3',
+      status: 'Past',
+      statusColor: 'slate',
+      from: 'Hargeisa',
+      fromCode: 'HGA',
+      to: 'Addis Ababa',
+      toCode: 'ADD',
+      date: 'Mar 10, 2026',
+      passengers: '1 Adult',
+      airline: 'Ethiopian Airlines',
+      flightNumber: 'ET502',
+      depTime: '10:15',
+      arrTime: '12:45',
+      duration: '2h 30m',
+      seat: '15C',
+      gate: 'C2',
+      terminal: '2',
+      ticketNumber: 'TKT-ET502-15C',
+      isPast: true,
+    },
+  ]);
+
+  // QR Modal State
+  const [activeBoardingPass, setActiveBoardingPass] = useState<any>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Orders State
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(false);
-
-  // Support State
-  const [supportTickets, setSupportTickets] = useState<any[]>([]);
-  const [selectedSupport, setSelectedSupport] = useState<any>(null);
-  const [newSupportSubject, setNewSupportSubject] = useState('');
-  const [newSupportMessage, setNewSupportMessage] = useState('');
-  const [newSupportCategory, setNewSupportCategory] = useState('BOOKING_CHANGE');
-  const [showNewSupportModal, setShowNewSupportModal] = useState(false);
-  const [supportComment, setSupportComment] = useState('');
-  const [supportLoading, setSupportLoading] = useState(false);
-
-  // Network Banner
-  const [networkError, setNetworkError] = useState('');
-
-  // ----------------------------------------------------
-  // Sync Data on Tab Change
-  // ----------------------------------------------------
   useEffect(() => {
-    fetchFlights();
-  }, [apiBaseUrl, searchOrigin, searchDest, filterClass]);
-
-  useEffect(() => {
-    if (user && token) {
-      if (activeTab === 'wallet') fetchTickets();
-      if (activeTab === 'orders') fetchOrders();
-      if (activeTab === 'support') fetchSupport();
-    }
-  }, [activeTab, user, token, apiBaseUrl]);
-
-  // QR canvas renderer
-  useEffect(() => {
-    if (selectedTicket && qrCanvasRef.current) {
-      QRCode.toCanvas(qrCanvasRef.current, selectedTicket.qrSecurityPayload, {
-        width: 190,
-        margin: 2,
-        color: { dark: '#0f172a', light: '#ffffff' },
+    if (activeBoardingPass && qrCanvasRef.current) {
+      const payload = `SKYTICKETS:v1:${activeBoardingPass.ticketNumber}:${activeBoardingPass.flightNumber}:${activeBoardingPass.seat}:HMACVERIFIED`;
+      QRCode.toCanvas(qrCanvasRef.current, payload, {
+        width: 180,
+        margin: 1,
+        color: { dark: '#0b1329', light: '#ffffff' },
       }).catch(console.error);
     }
-  }, [selectedTicket]);
+  }, [activeBoardingPass]);
 
-
-  // ----------------------------------------------------
-  // API Calls
-  // ----------------------------------------------------
-  const fetchFlights = async () => {
-    setLoadingFlights(true);
-    setNetworkError('');
-    try {
-      const params = new URLSearchParams();
-      if (searchOrigin) params.append('origin', searchOrigin);
-      if (searchDest) params.append('destination', searchDest);
-      if (filterClass !== 'ALL') params.append('cabinClass', filterClass);
-
-      const res = await fetch(`${apiBaseUrl}/api/flights?${params.toString()}`);
-      if (!res.ok) throw new Error('Could not connect to Kanimo Airline backend');
-      const data = await res.json();
-      setFlights(data.flights || []);
-    } catch (err: any) {
-      setNetworkError(err.message || 'Network connection error');
-    } finally {
-      setLoadingFlights(false);
-    }
+  // Swap From / To
+  const handleSwap = () => {
+    const temp = fromCode;
+    setFromCode(toCode);
+    setToCode(temp);
   };
 
-  const fetchTickets = async () => {
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/tickets`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(data.tickets || []);
-        localStorage.setItem('kanimo_cached_tickets', JSON.stringify(data.tickets || []));
-      }
-    } catch (err) {
-      // Keep cached tickets in offline mode
-    }
+  // Switch Bottom Navigation Tab
+  const handleTabChange = (tab: 'home' | 'bookings' | 'explore' | 'profile') => {
+    setActiveBottomTab(tab);
+    if (tab === 'home') setCurrentScreen('home');
+    if (tab === 'bookings') setCurrentScreen('bookings');
+    if (tab === 'explore') setCurrentScreen('explore');
+    if (tab === 'profile') setCurrentScreen('profile');
   };
 
-  const fetchOrders = async () => {
-    setLoadingOrders(true);
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/orders`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data.orders || []);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingOrders(false);
-    }
-  };
+  // Perform Booking Payment
+  const handlePayNow = () => {
+    setPaymentProcessing(true);
+    setTimeout(() => {
+      setPaymentProcessing(false);
+      setPaymentDone(true);
 
-  const fetchSupport = async () => {
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/support`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSupportTickets(data.supportTickets || []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      const newBooking = {
+        id: `b-${Date.now()}`,
+        status: 'Confirmed',
+        statusColor: 'emerald',
+        from: fromCode === 'HGA' ? 'Hargeisa' : fromCode,
+        fromCode: fromCode,
+        to: toCode === 'MGQ' ? 'Mogadishu' : toCode,
+        toCode: toCode,
+        date: depDate,
+        passengers: passengers,
+        airline: selectedFlight.airline,
+        flightNumber: selectedFlight.flightNumber,
+        depTime: selectedFlight.depTime,
+        arrTime: selectedFlight.arrTime,
+        duration: selectedFlight.duration,
+        seat: selectedSeat,
+        gate: 'A3',
+        terminal: '1',
+        ticketNumber: `TKT-${selectedFlight.flightNumber}-${selectedSeat}`,
+        isPast: false,
+      };
 
-  // ----------------------------------------------------
-  // Authentication Actions
-  // ----------------------------------------------------
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthSuccess('');
-    setAuthLoading(true);
-
-    try {
-      if (authMode === 'LOGIN') {
-        const res = await fetch(`${apiBaseUrl}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: authEmail, password: authPassword }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Authentication failed');
-
-        setUser(data.user);
-        setToken(data.token);
-        localStorage.setItem('kanimo_user', JSON.stringify(data.user));
-        localStorage.setItem('kanimo_token', data.token);
-        setActiveTab('explore');
-      } else if (authMode === 'REGISTER') {
-        const res = await fetch(`${apiBaseUrl}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: authName, email: authEmail, password: authPassword, phone: authPhone }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Registration failed');
-
-        setUser(data.user);
-        setToken(data.token);
-        localStorage.setItem('kanimo_user', JSON.stringify(data.user));
-        localStorage.setItem('kanimo_token', data.token);
-        setActiveTab('explore');
-      } else if (authMode === 'FORGOT') {
-        const res = await fetch(`${apiBaseUrl}/api/auth/forgot-password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: authEmail }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Request failed');
-        setAuthSuccess(data.message || 'Recovery instructions sent.');
-      }
-    } catch (err: any) {
-      setAuthError(err.message || 'Auth failure');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('kanimo_user');
-    localStorage.removeItem('kanimo_token');
-    setActiveTab('explore');
-  };
-
-  const fastFillAccount = (email: string, pass: string) => {
-    setAuthEmail(email);
-    setAuthPassword(pass);
-    setAuthError('');
-  };
-
-  // ----------------------------------------------------
-  // Booking Action
-  // ----------------------------------------------------
-  const handleBookTicket = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      setActiveTab('profile');
-      return;
-    }
-
-    setBookingLoading(true);
-    setBookingError('');
-    setBookingSuccess(null);
-
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          flightId: selectedFlight.id,
-          ticketTierId: selectedTierId,
-          paymentMethod: 'DEMO_PAYMENT',
-          passengers: [{ name: passengerName || user.name, passport: passengerPassport, seatPreference }],
-          contactEmail: user.email,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Booking reservation failed');
-
-      setBookingSuccess(data);
-      fetchTickets();
-      fetchOrders();
-    } catch (err: any) {
-      setBookingError(err.message || 'Reservation error');
-    } finally {
-      setBookingLoading(false);
-    }
-  };
-
-  // ----------------------------------------------------
-  // Support Action
-  // ----------------------------------------------------
-  const handleCreateSupport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSupportLoading(true);
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/support`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          subject: newSupportSubject,
-          category: newSupportCategory,
-          initialMessage: newSupportMessage,
-        }),
-      });
-
-      if (!res.ok) throw new Error('Could not submit inquiry');
-      setShowNewSupportModal(false);
-      setNewSupportSubject('');
-      setNewSupportMessage('');
-      fetchSupport();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setSupportLoading(false);
-    }
-  };
-
-  const handleSendSupportComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supportComment.trim() || !selectedSupport) return;
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/support/${selectedSupport.id}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message: supportComment }),
-      });
-      if (res.ok) {
-        setSupportComment('');
-        fetchSupport();
-      }
-    } catch (e) {
-      console.error(e);
-    }
+      setBookingsList([newBooking, ...bookingsList]);
+    }, 1200);
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* Top Status & Brand Header with Safe Area Inset */}
-      <header 
-        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 38px)' }}
-        className="bg-slate-900 border-b border-slate-800 px-4 pb-3 flex items-center justify-between z-20 flex-shrink-0 shadow-md"
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
-            <Plane className="w-4 h-4 text-white transform -rotate-45" />
-          </div>
-          <div>
-            <span className="font-extrabold text-sm tracking-wider text-white">
-              KANIMO <span className="text-blue-400 font-light">AIRLINE</span>
-            </span>
-            <span className="text-[9px] text-slate-400 block -mt-1 font-mono">Mobile App</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-emerald-400 font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Cloud
-          </span>
-        </div>
-      </header>
-
-      {/* Network Alert Banner */}
-      {networkError && (
-        <div className="bg-rose-950/90 border-b border-rose-800 px-4 py-2 text-[11px] text-rose-300 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <WifiOff className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Connection issue. Connecting to cloud...</span>
-          </div>
-          <button onClick={() => fetchFlights()} className="underline font-bold ml-2 px-2 py-0.5 rounded bg-rose-900/50">
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* Main Screen Content Body */}
-      <main className="flex-1 overflow-y-auto pb-36">
-        {/* ========================================== */}
-        {/* TAB 1: EXPLORE / FLIGHTS                   */}
-        {/* ========================================== */}
-        {activeTab === 'explore' && (
-          <div className="p-4 space-y-4">
-            {/* Search Bar */}
-            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
-                  Find Scheduled Flights
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono">
-                  {flights.length} Direct Routes
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={searchOrigin}
-                  onChange={(e) => setSearchOrigin(e.target.value)}
-                  placeholder="From (JFK, SFO...)"
-                  className="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500"
-                />
-                <input
-                  type="text"
-                  value={searchDest}
-                  onChange={(e) => setSearchDest(e.target.value)}
-                  placeholder="To (LHR, HND...)"
-                  className="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500"
-                />
-              </div>
-
-              <select
-                value={filterClass}
-                onChange={(e) => setFilterClass(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-              >
-                <option value="ALL">All Cabin Classes</option>
-                <option value="ECONOMY">Economy Classic</option>
-                <option value="PREMIUM_ECONOMY">Premium Comfort</option>
-                <option value="BUSINESS">Business Executive</option>
-                <option value="FIRST">Royal First Class</option>
-              </select>
-            </div>
-
-            {/* Flight Cards Stream */}
-            {loadingFlights ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-32 bg-slate-900 animate-pulse rounded-2xl border border-slate-800" />
-                ))}
-              </div>
-            ) : flights.length === 0 ? (
-              <div className="p-8 text-center bg-slate-900 rounded-2xl border border-slate-800 text-slate-400 text-xs">
-                No flights matching search criteria.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {flights.map((f) => (
-                  <div
-                    key={f.id}
-                    className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3 shadow-sm hover:border-slate-700 transition"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-xs bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">
-                          {f.flightNumber}
-                        </span>
-                        <span className="text-[11px] text-slate-400 truncate max-w-[150px]">
-                          {f.aircraft}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold uppercase text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">
-                        {f.status}
-                      </span>
-                    </div>
-
-                    {/* Route Visualizer */}
-                    <div className="flex items-center justify-between py-1">
-                      <div>
-                        <p className="text-xl font-black text-white">{f.originCode}</p>
-                        <p className="text-[11px] text-slate-400">{f.originCity}</p>
-                      </div>
-
-                      <div className="flex flex-col items-center flex-1 px-4">
-                        <span className="text-[10px] text-slate-500 font-bold">{f.duration}</span>
-                        <div className="w-full flex items-center gap-1">
-                          <div className="h-1 w-1 rounded-full bg-blue-500" />
-                          <div className="h-0.5 bg-blue-500/40 flex-1 relative">
-                            <Plane className="w-3 h-3 text-blue-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90" />
-                          </div>
-                          <div className="h-1 w-1 rounded-full bg-blue-500" />
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-xl font-black text-white">{f.destinationCode}</p>
-                        <p className="text-[11px] text-slate-400">{f.destinationCity}</p>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[9px] uppercase font-bold text-slate-500 block">From</span>
-                        <span className="text-base font-black text-white">${f.minPrice}</span>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          setSelectedFlight(f);
-                          setSelectedTierId(f.tiers[0]?.id || '');
-                          setPassengerName(user?.name || '');
-                          setBookingSuccess(null);
-                          setBookingError('');
-                        }}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/20"
-                      >
-                        Book Flight
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================== */}
-        {/* TAB 2: MY WALLET & BOARDING PASSES        */}
-        {/* ========================================== */}
-        {activeTab === 'wallet' && (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-black text-white">Digital Boarding Passes</h2>
-                <p className="text-[11px] text-slate-400">HMAC-SHA256 authenticated kiosk passes</p>
-              </div>
-              <button
-                onClick={fetchTickets}
-                className="p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 hover:text-white"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {!user ? (
-              <div className="p-8 text-center bg-slate-900 rounded-3xl border border-slate-800 space-y-3">
-                <Ticket className="w-10 h-10 text-blue-500 mx-auto" />
-                <h3 className="text-sm font-bold text-white">Sign In to View Passes</h3>
-                <p className="text-xs text-slate-400">
-                  Access your issued boarding passes with offline QR codes.
-                </p>
-                <button
-                  onClick={() => setActiveTab('profile')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold"
-                >
-                  Sign In
-                </button>
-              </div>
-            ) : tickets.length === 0 ? (
-              <div className="p-8 text-center bg-slate-900 rounded-3xl border border-slate-800 space-y-3">
-                <Plane className="w-8 h-8 text-slate-600 mx-auto" />
-                <h3 className="text-sm font-bold text-white">No Tickets Found</h3>
-                <p className="text-xs text-slate-400">You haven't booked any trips yet.</p>
-                <button
-                  onClick={() => setActiveTab('explore')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold"
-                >
-                  Explore Flights
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {tickets.map((t) => (
-                  <div
-                    key={t.id}
-                    onClick={() => setSelectedTicket(t)}
-                    className="bg-slate-900 rounded-2xl border border-slate-800 p-4 space-y-3 shadow-md cursor-pointer hover:border-slate-700 transition"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-xs text-blue-400">
-                        {t.flight.flightNumber}
-                      </span>
-                      <span
-                        className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                          t.status === 'CHECKED_IN'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-blue-950 text-blue-400 border border-blue-800'
-                        }`}
-                      >
-                        {t.status}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-2xl font-black text-white">{t.flight.originCode}</p>
-                        <p className="text-[10px] text-slate-400">{t.flight.originCity}</p>
-                      </div>
-
-                      <Plane className="w-4 h-4 text-blue-500 transform rotate-90" />
-
-                      <div className="text-right">
-                        <p className="text-2xl font-black text-white">{t.flight.destinationCode}</p>
-                        <p className="text-[10px] text-slate-400">{t.flight.destinationCity}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-center text-xs">
-                      <div className="bg-slate-950 p-2 rounded-xl">
-                        <span className="text-[9px] text-slate-500 uppercase block font-bold">Passenger</span>
-                        <span className="font-bold text-white truncate block">{t.passengerName}</span>
-                      </div>
-                      <div className="bg-slate-950 p-2 rounded-xl">
-                        <span className="text-[9px] text-slate-500 uppercase block font-bold">Seat</span>
-                        <span className="font-black text-blue-400 block">{t.seatNumber}</span>
-                      </div>
-                      <div className="bg-slate-950 p-2 rounded-xl">
-                        <span className="text-[9px] text-slate-500 uppercase block font-bold">Gate</span>
-                        <span className="font-bold text-white block">{t.flight.gate || 'TBA'}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="font-mono">{t.ticketNumber}</span>
-                      <span className="text-blue-400 font-bold flex items-center gap-1">
-                        View QR Pass <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================== */}
-        {/* TAB 3: BOOKINGS / ORDERS                   */}
-        {/* ========================================== */}
-        {activeTab === 'orders' && (
-          <div className="p-4 space-y-4">
-            <h2 className="text-lg font-black text-white">Purchase History & Receipts</h2>
-
-            {!user ? (
-              <div className="p-8 text-center bg-slate-900 rounded-3xl border border-slate-800 space-y-3">
-                <Luggage className="w-10 h-10 text-blue-500 mx-auto" />
-                <h3 className="text-sm font-bold text-white">Sign In to View Orders</h3>
-                <button
-                  onClick={() => setActiveTab('profile')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold"
-                >
-                  Sign In
-                </button>
-              </div>
-            ) : orders.length === 0 ? (
-              <div className="p-8 text-center bg-slate-900 rounded-3xl border border-slate-800 text-slate-400 text-xs">
-                No purchases on record.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {orders.map((o) => (
-                  <div key={o.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-xs text-white">{o.orderNumber}</span>
-                      <span
-                        className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                          o.status === 'PAID'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-slate-800 text-slate-400'
-                        }`}
-                      >
-                        {o.status}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div>
-                        <p className="text-xs font-bold text-white">
-                          Flight {o.flight?.flightNumber} ({o.flight?.originCode} → {o.flight?.destinationCode})
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          {o.passengerCount} traveler(s) • {new Date(o.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span className="text-base font-black text-white">${o.totalAmount}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================== */}
-        {/* TAB 4: SUPPORT DESK                        */}
-        {/* ========================================== */}
-        {activeTab === 'support' && (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-black text-white">Passenger Support</h2>
-                <p className="text-[11px] text-slate-400">Kanimo 24/7 Concierge Service</p>
-              </div>
-              {user && (
-                <button
-                  onClick={() => setShowNewSupportModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center gap-1"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  <span>Open Ticket</span>
-                </button>
-              )}
-            </div>
-
-            {!user ? (
-              <div className="p-8 text-center bg-slate-900 rounded-3xl border border-slate-800 space-y-3">
-                <LifeBuoy className="w-10 h-10 text-blue-500 mx-auto" />
-                <h3 className="text-sm font-bold text-white">Sign In for Assistance</h3>
-                <button
-                  onClick={() => setActiveTab('profile')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold"
-                >
-                  Sign In
-                </button>
-              </div>
-            ) : supportTickets.length === 0 ? (
-              <div className="p-8 text-center bg-slate-900 rounded-3xl border border-slate-800 text-slate-400 text-xs">
-                No active support inquiries. Click 'Open Ticket' to start a conversation.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {supportTickets.map((st) => (
-                  <div
-                    key={st.id}
-                    onClick={() => setSelectedSupport(st)}
-                    className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2 cursor-pointer hover:border-slate-700"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-xs text-blue-400">{st.ticketCode}</span>
-                      <span
-                        className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                          st.status === 'RESOLVED'
-                            ? 'bg-emerald-950 text-emerald-400'
-                            : 'bg-amber-950 text-amber-400'
-                        }`}
-                      >
-                        {st.status}
-                      </span>
-                    </div>
-                    <p className="text-xs font-bold text-white">{st.subject}</p>
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                      <span>{st.category.replace('_', ' ')}</span>
-                      <span>{new Date(st.updatedAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================== */}
-        {/* TAB 5: PROFILE & AUTHENTICATION            */}
-        {/* ========================================== */}
-        {activeTab === 'profile' && (
-          <div className="p-4 space-y-6">
-            <h2 className="text-lg font-black text-white">Account & Preferences</h2>
-
-            {user ? (
-              <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-5">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-xl text-white">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-white">{user.name}</h3>
-                    <p className="text-xs text-slate-400">{user.email}</p>
-                    <span className="inline-block mt-1 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800">
-                      ROLE: {user.role}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-800 space-y-3">
-                  <div className="flex justify-between text-xs text-slate-400">
-                    <span>Active Server Host:</span>
-                    <span className="font-mono text-white">{apiBaseUrl}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleLogout}
-                  className="w-full py-3 bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-800 rounded-xl text-xs font-bold flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign Out of Kanimo Airline</span>
-                </button>
-              </div>
-            ) : (
-              <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-5">
-                {/* 1-Click Fast Login Helper */}
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                  <span className="text-[10px] uppercase font-bold text-blue-400 block">
-                    Instant Demo Logins:
-                  </span>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => fastFillAccount('passenger@example.com', 'CustomerPass123!')}
-                      className="p-2 bg-blue-950/60 rounded-xl border border-blue-800 text-blue-300 font-semibold text-center"
-                    >
-                      ✈️ Passenger
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => fastFillAccount('admin@kanimo.com', 'AdminPass123!')}
-                      className="p-2 bg-amber-950/60 rounded-xl border border-amber-800 text-amber-300 font-semibold text-center"
-                    >
-                      👑 Admin
-                    </button>
-                  </div>
-                </div>
-
-                {/* Form Tabs */}
-                <div className="flex border-b border-slate-800 text-xs font-bold">
-                  <button
-                    onClick={() => {
-                      setAuthMode('LOGIN');
-                      setAuthError('');
-                    }}
-                    className={`flex-1 py-2 text-center border-b-2 transition ${
-                      authMode === 'LOGIN' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400'
-                    }`}
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAuthMode('REGISTER');
-                      setAuthError('');
-                    }}
-                    className={`flex-1 py-2 text-center border-b-2 transition ${
-                      authMode === 'REGISTER' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400'
-                    }`}
-                  >
-                    Register
-                  </button>
-                </div>
-
-                {authError && (
-                  <div className="p-3 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 text-xs">
-                    {authError}
-                  </div>
-                )}
-                {authSuccess && (
-                  <div className="p-3 bg-emerald-950/60 border border-emerald-800 rounded-xl text-emerald-300 text-xs">
-                    {authSuccess}
-                  </div>
-                )}
-
-                <form onSubmit={handleAuthSubmit} className="space-y-3">
-                  {authMode === 'REGISTER' && (
-                    <div>
-                      <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
-                        Full Legal Name
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={authName}
-                        onChange={(e) => setAuthName(e.target.value)}
-                        placeholder="Alexander Mitchell"
-                        className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={authEmail}
-                      onChange={(e) => setAuthEmail(e.target.value)}
-                      placeholder="passenger@example.com"
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-                    />
-                  </div>
-
-                  {authMode !== 'FORGOT' && (
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <label className="text-[10px] uppercase font-bold text-slate-400">Password</label>
-                        {authMode === 'LOGIN' && (
-                          <button
-                            type="button"
-                            onClick={() => setAuthMode('FORGOT')}
-                            className="text-[10px] text-blue-400"
-                          >
-                            Forgot?
-                          </button>
-                        )}
-                      </div>
-                      <input
-                        type="password"
-                        required
-                        value={authPassword}
-                        onChange={(e) => setAuthPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-                      />
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={authLoading}
-                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/30 transition disabled:opacity-50"
-                  >
-                    {authLoading
-                      ? 'Processing...'
-                      : authMode === 'LOGIN'
-                      ? 'Sign In to Account'
-                      : authMode === 'REGISTER'
-                      ? 'Create Passenger Account'
-                      : 'Send Recovery Link'}
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-
+    <div className="flex flex-col min-h-screen bg-[#f1f5f9] text-slate-800 antialiased font-sans">
       {/* ======================================================== */}
-      {/* MODAL: FLIGHT DETAIL & BOOKING FLOW                      */}
+      {/* SCREEN 1: HOME */}
       {/* ======================================================== */}
-      {selectedFlight && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 border border-slate-800 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
-                <span className="font-mono text-xs font-bold text-blue-400">
-                  {selectedFlight.flightNumber}
-                </span>
-                <h3 className="text-base font-black text-white">
-                  {selectedFlight.originCity} → {selectedFlight.destinationCity}
-                </h3>
+      {currentScreen === 'home' && (
+        <div className="flex-1 flex flex-col pt-safe-top pb-safe-bottom mb-20 overflow-y-auto">
+          {/* Top Bar: Logo, Notification Bell, User Avatar */}
+          <div className="px-5 py-3.5 flex items-center justify-between bg-white border-b border-slate-150">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                <Plane className="w-4 h-4 transform -rotate-45" />
               </div>
-              <button
-                onClick={() => setSelectedFlight(null)}
-                className="text-slate-400 hover:text-white font-bold text-lg"
-              >
-                ✕
-              </button>
+              <div className="flex flex-col">
+                <span className="font-extrabold text-lg tracking-tight text-slate-900 leading-none">
+                  Sky<span className="text-blue-600">Tickets</span>
+                </span>
+                <span className="text-[9px] text-slate-400 font-semibold tracking-wider uppercase mt-0.5">
+                  Fly More • Explore More
+                </span>
+              </div>
             </div>
 
-            {bookingSuccess ? (
-              <div className="p-6 text-center space-y-3 bg-emerald-950/40 rounded-2xl border border-emerald-800">
-                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-                <h4 className="text-base font-black text-white">Boarding Pass Issued!</h4>
-                <p className="text-xs text-slate-300">
-                  Order <span className="font-bold text-white">{bookingSuccess.order?.orderNumber}</span> paid in Demo Mode. Your pass has been saved to your wallet.
+            <div className="flex items-center gap-3">
+              <button className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 relative">
+                <Bell className="w-4 h-4" />
+                <span className="w-2 h-2 rounded-full bg-blue-600 absolute top-1 right-1"></span>
+              </button>
+
+              <div
+                onClick={() => handleTabChange('profile')}
+                className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm cursor-pointer"
+              >
+                KM
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Hero Card Banner */}
+            <div className="relative rounded-2xl overflow-hidden bg-[#0c1b33] text-white p-5 shadow-md">
+              <div
+                className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity pointer-events-none"
+                style={{
+                  backgroundImage:
+                    "url('https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=800&q=80')",
+                }}
+              />
+              <div className="relative z-10">
+                <h2 className="text-2xl font-black tracking-tight text-white">Explore the World</h2>
+                <p className="text-xs text-blue-100/90 mt-1 max-w-xs leading-relaxed font-normal">
+                  Book your flights with the best prices and best experience.
                 </p>
+              </div>
+            </div>
+
+            {/* Floating Search Card */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-150 space-y-3.5">
+              {/* Tabs: Flights / Hotels / Bus */}
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <button
-                  onClick={() => {
-                    setSelectedFlight(null);
-                    setActiveTab('wallet');
-                  }}
-                  className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold"
+                  onClick={() => setSearchTab('flights')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition ${
+                    searchTab === 'flights'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-100'
+                  }`}
                 >
-                  View in My Wallet
+                  <Plane className="w-3.5 h-3.5 transform -rotate-45" />
+                  <span>Flights</span>
+                </button>
+
+                <button
+                  onClick={() => setSearchTab('hotels')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition ${
+                    searchTab === 'hotels'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>Hotels</span>
+                </button>
+
+                <button
+                  onClick={() => setSearchTab('bus')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition ${
+                    searchTab === 'bus'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  <Bus className="w-3.5 h-3.5" />
+                  <span>Bus</span>
                 </button>
               </div>
-            ) : (
-              <form onSubmit={handleBookTicket} className="space-y-4">
-                {/* Select Tier */}
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold text-slate-400">
-                    Select Cabin Class Tier
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedFlight.tiers?.map((tier: any) => {
-                      const isSelected = selectedTierId === tier.id;
-                      return (
-                        <div
-                          key={tier.id}
-                          onClick={() => setSelectedTierId(tier.id)}
-                          className={`p-3 rounded-xl border cursor-pointer text-xs space-y-1 transition ${
-                            isSelected
-                              ? 'bg-blue-950/60 border-blue-500 shadow-sm'
-                              : 'bg-slate-950 border-slate-800'
-                          }`}
-                        >
-                          <div className="font-bold text-white truncate">{tier.name}</div>
-                          <div className="text-sm font-black text-blue-400">${tier.price}</div>
-                          <div className="text-[10px] text-slate-500">
-                            {tier.remainingSeats} seats left
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
 
-                {/* Passenger Form */}
-                <div className="space-y-2 pt-2 border-t border-slate-800">
-                  <label className="text-[10px] uppercase font-bold text-slate-400">
-                    Passenger Legal Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={passengerName}
-                    onChange={(e) => setPassengerName(e.target.value)}
-                    placeholder="Passenger full name..."
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                      Passport / ID
-                    </label>
-                    <input
-                      type="text"
-                      value={passengerPassport}
-                      onChange={(e) => setPassengerPassport(e.target.value)}
-                      placeholder="US918293..."
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                      Seat Preference
-                    </label>
+              {/* Route Input with Swap */}
+              <div className="relative space-y-2">
+                {/* From */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">From</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Plane className="w-4 h-4 text-blue-600 shrink-0 transform -rotate-45" />
                     <select
-                      value={seatPreference}
-                      onChange={(e) => setSeatPreference(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
+                      value={fromCode}
+                      onChange={(e) => setFromCode(e.target.value)}
+                      className="w-full bg-transparent font-bold text-slate-800 text-sm focus:outline-none"
                     >
-                      <option value="Window">Window</option>
-                      <option value="Aisle">Aisle</option>
-                      <option value="Middle">Middle</option>
+                      <option value="HGA">Hargeisa (HGA)</option>
+                      <option value="MGQ">Mogadishu (MGQ)</option>
+                      <option value="ADD">Addis Ababa (ADD)</option>
+                      <option value="DXB">Dubai (DXB)</option>
                     </select>
                   </div>
                 </div>
 
-                {/* Demo Payment Notice */}
-                <div className="p-3 bg-amber-950/40 rounded-xl border border-amber-800 text-[11px] text-amber-300 flex items-start gap-2">
-                  <Lock className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                  <span>
-                    Simulated Instant Card Checkout active. Tickets are transactionally issued.
-                  </span>
+                {/* Swap Icon Button */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10">
+                  <button
+                    type="button"
+                    onClick={handleSwap}
+                    className="w-8 h-8 rounded-full bg-white border border-slate-200 text-blue-600 flex items-center justify-center shadow-md active:scale-95 transition"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
-                {bookingError && (
-                  <div className="p-2.5 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 text-xs">
-                    {bookingError}
+                {/* To */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">To</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Plane className="w-4 h-4 text-blue-600 shrink-0" />
+                    <select
+                      value={toCode}
+                      onChange={(e) => setToCode(e.target.value)}
+                      className="w-full bg-transparent font-bold text-slate-800 text-sm focus:outline-none"
+                    >
+                      <option value="MGQ">Mogadishu (MGQ)</option>
+                      <option value="HGA">Hargeisa (HGA)</option>
+                      <option value="ADD">Addis Ababa (ADD)</option>
+                      <option value="DXB">Dubai (DXB)</option>
+                    </select>
                   </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={bookingLoading}
-                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-600/30 transition disabled:opacity-50"
-                >
-                  {bookingLoading ? 'Reserving Seat...' : 'Pay & Issue Digital Boarding Pass'}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* MODAL: QR BOARDING PASS VIEWER                           */}
-      {/* ======================================================== */}
-      {selectedTicket && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white text-slate-900 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative">
-            <button
-              onClick={() => setSelectedTicket(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 font-bold text-lg"
-            >
-              ✕
-            </button>
-
-            {/* Header */}
-            <div className="text-center space-y-1">
-              <span className="font-extrabold text-sm tracking-wider uppercase text-blue-600">
-                KANIMO AIRLINE
-              </span>
-              <h3 className="text-xl font-black">{selectedTicket.flight.flightNumber}</h3>
-              <p className="text-xs text-slate-500">
-                {selectedTicket.flight.originCode} → {selectedTicket.flight.destinationCode}
-              </p>
-            </div>
-
-            {/* QR Canvas */}
-            <div className="flex flex-col items-center bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <canvas ref={qrCanvasRef} className="rounded-lg" />
-              <span className="text-[10px] font-mono font-bold text-slate-500 mt-2 tracking-wider">
-                SCAN AT AIRPORT KIOSK
-              </span>
-            </div>
-
-            {/* Passenger Details */}
-            <div className="grid grid-cols-2 gap-2 text-center text-xs">
-              <div className="p-2 bg-slate-100 rounded-xl">
-                <span className="text-[9px] uppercase font-bold text-slate-400 block">Passenger</span>
-                <span className="font-bold text-slate-800 truncate block">
-                  {selectedTicket.passengerName}
-                </span>
+                </div>
               </div>
-              <div className="p-2 bg-slate-100 rounded-xl">
-                <span className="text-[9px] uppercase font-bold text-slate-400 block">Seat</span>
-                <span className="font-black text-blue-600 text-sm block">
-                  {selectedTicket.seatNumber}
-                </span>
-              </div>
-            </div>
 
-            {/* HMAC security stamp */}
-            <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800 text-[10px] font-mono text-center">
-              ✓ HMAC-SHA256 SIGNED & SECURED
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Dates Row */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Departure</span>
+                  <div className="flex items-center gap-1.5 mt-0.5 text-xs font-bold text-slate-800">
+                    <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>{depDate}</span>
+                  </div>
+                </div>
 
-      {/* ======================================================== */}
-      {/* MODAL: SUPPORT CONVERSATION THREAD                       */}
-      {/* ======================================================== */}
-      {selectedSupport && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-3xl max-w-md w-full h-[550px] flex flex-col border border-slate-800 shadow-2xl overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-              <div>
-                <span className="font-mono text-xs font-bold text-blue-400">
-                  {selectedSupport.ticketCode}
-                </span>
-                <h4 className="text-xs font-bold text-white line-clamp-1">
-                  {selectedSupport.subject}
-                </h4>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Return</span>
+                  <div className="flex items-center gap-1.5 mt-0.5 text-xs font-bold text-slate-800">
+                    <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>{retDate}</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Passengers */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Passengers</span>
+                  <div className="flex items-center gap-2 mt-0.5 text-xs font-bold text-slate-800">
+                    <UserIcon className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>{passengers}</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+
+              {/* Search Flights Button */}
               <button
-                onClick={() => setSelectedSupport(null)}
-                className="text-slate-400 hover:text-white font-bold"
+                onClick={() => setCurrentScreen('search_results')}
+                className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-md shadow-blue-600/30 flex items-center justify-center gap-2 transition"
               >
-                ✕
+                <Search className="w-4 h-4" />
+                <span>Search Flights</span>
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {selectedSupport.comments?.map((c: any) => {
-                const isStaff = c.isStaffReply;
-                return (
+            {/* 3 Guarantee Pills */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-white rounded-xl p-2.5 border border-slate-150 flex flex-col items-center text-center shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-800">Best Prices</span>
+              </div>
+
+              <div className="bg-white rounded-xl p-2.5 border border-slate-150 flex flex-col items-center text-center shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-1">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-800">Secure Booking</span>
+              </div>
+
+              <div className="bg-white rounded-xl p-2.5 border border-slate-150 flex flex-col items-center text-center shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-1">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-800">24/7 Support</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* SCREEN 2: SEARCH RESULTS */}
+      {/* ======================================================== */}
+      {currentScreen === 'search_results' && (
+        <div className="flex-1 flex flex-col pt-safe-top pb-safe-bottom mb-20 overflow-y-auto">
+          {/* Header */}
+          <div className="px-4 py-3.5 bg-white border-b border-slate-150 flex items-center justify-between sticky top-0 z-20">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCurrentScreen('home')}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-900 leading-tight">
+                  {fromCode === 'HGA' ? 'Hargeisa' : fromCode} ➔ {toCode === 'MGQ' ? 'Mogadishu' : toCode}
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium">Nov 15, 2026 • 1 Adult</p>
+              </div>
+            </div>
+            <button className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Horizontal Date Slider Strip */}
+          <div className="bg-white border-b border-slate-200 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {dateStrip.map((item, idx) => (
+              <button
+                key={item.date}
+                onClick={() => setSelectedDateIdx(idx)}
+                className={`flex-1 min-w-[62px] py-2 px-1.5 rounded-xl text-center transition ${
+                  selectedDateIdx === idx
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <span className="text-[10px] block uppercase font-medium">{item.day}</span>
+                <span className="text-xs font-bold block">{item.date}</span>
+                <span
+                  className={`text-[10px] font-extrabold block mt-0.5 ${
+                    selectedDateIdx === idx ? 'text-blue-100' : 'text-slate-500'
+                  }`}
+                >
+                  {item.price}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Flight Cards List */}
+          <div className="p-4 space-y-3.5">
+            {defaultFlights.map((flight) => (
+              <div
+                key={flight.id}
+                className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:shadow-md transition space-y-3"
+              >
+                {/* Airline Title & Code */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <AirlineBadge airline={flight.airline} code={flight.flightNumber} />
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 leading-tight">{flight.airline}</h4>
+                      <span className="text-[11px] text-slate-400 font-medium">{flight.flightNumber}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-black text-slate-900">${flight.price}</span>
+                  </div>
+                </div>
+
+                {/* Timeline Route Display */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="text-left">
+                    <span className="text-base font-black text-slate-900 leading-none">{flight.depTime}</span>
+                    <span className="text-[11px] font-bold text-slate-400 block mt-0.5">{flight.from}</span>
+                  </div>
+
+                  <div className="flex-1 px-4 flex flex-col items-center">
+                    <span className="text-[10px] font-semibold text-slate-400">{flight.duration}</span>
+                    <div className="w-full flex items-center my-1">
+                      <div className="w-2 h-2 rounded-full border-2 border-blue-600 bg-white"></div>
+                      <div className="flex-1 border-t border-dashed border-slate-300"></div>
+                      <Plane className="w-3.5 h-3.5 text-blue-600 transform rotate-90 mx-1 shrink-0" />
+                      <div className="flex-1 border-t border-dashed border-slate-300"></div>
+                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                    </div>
+                    <span className="text-[10px] font-medium text-emerald-600">{flight.stopType}</span>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-base font-black text-slate-900 leading-none">{flight.arrTime}</span>
+                    <span className="text-[11px] font-bold text-slate-400 block mt-0.5">{flight.to}</span>
+                  </div>
+                </div>
+
+                {/* Action Button */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                  <button
+                    onClick={() => {
+                      setSelectedFlight(flight);
+                      setCurrentScreen('flight_details');
+                    }}
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm shadow-blue-500/20"
+                  >
+                    Book Now
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* SCREEN 3: FLIGHT DETAILS */}
+      {/* ======================================================== */}
+      {currentScreen === 'flight_details' && (
+        <div className="flex-1 flex flex-col pt-safe-top pb-safe-bottom mb-20 overflow-y-auto">
+          {/* Header */}
+          <div className="px-4 py-3.5 bg-white border-b border-slate-150 flex items-center justify-between sticky top-0 z-20">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCurrentScreen('search_results')}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h3 className="font-extrabold text-base text-slate-900">Flight Details</h3>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Wing / Cloud Banner */}
+            <div className="relative rounded-2xl overflow-hidden h-36 bg-slate-900 shadow-sm">
+              <img
+                src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80"
+                alt="Sky banner"
+                className="w-full h-full object-cover opacity-80"
+              />
+              <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-800">
+                Direct Route
+              </div>
+            </div>
+
+            {/* Airline Info Card */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <AirlineBadge airline={selectedFlight.airline} code={selectedFlight.flightNumber} />
+                  <div>
+                    <h4 className="font-extrabold text-base text-slate-900">{selectedFlight.airline}</h4>
+                    <span className="text-xs text-slate-400 font-medium">{selectedFlight.flightNumber}</span>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 font-bold text-xs">
+                  {selectedFlight.stopType}
+                </span>
+              </div>
+
+              {/* Large Route Display */}
+              <div className="flex items-center justify-between border-y border-slate-100 py-4">
+                <div>
+                  <span className="text-2xl font-black text-slate-900 block leading-tight">HGA</span>
+                  <span className="text-xs text-slate-500 block">Hargeisa</span>
+                  <span className="text-base font-extrabold text-slate-800 block mt-1">{selectedFlight.depTime}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Sun, Nov 15, 2026</span>
+                </div>
+
+                <div className="flex-1 px-4 flex flex-col items-center">
+                  <Plane className="w-5 h-5 text-blue-600 transform rotate-90" />
+                  <span className="text-[11px] font-bold text-slate-500 mt-1">{selectedFlight.duration}</span>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-2xl font-black text-slate-900 block leading-tight">MGQ</span>
+                  <span className="text-xs text-slate-500 block">Mogadishu</span>
+                  <span className="text-base font-extrabold text-slate-800 block mt-1">{selectedFlight.arrTime}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Sun, Nov 15, 2026</span>
+                </div>
+              </div>
+
+              {/* Meta details chips */}
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="bg-slate-50 rounded-xl p-2.5">
+                  <Clock className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                  <span className="text-[10px] text-slate-400 block font-medium">Duration</span>
+                  <span className="font-bold text-slate-800">{selectedFlight.duration}</span>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-2.5">
+                  <Plane className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                  <span className="text-[10px] text-slate-400 block font-medium">Aircraft</span>
+                  <span className="font-bold text-slate-800">{selectedFlight.aircraft}</span>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-2.5">
+                  <Luggage className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                  <span className="text-[10px] text-slate-400 block font-medium">Class</span>
+                  <span className="font-bold text-slate-800">{selectedFlight.classType}</span>
+                </div>
+              </div>
+
+              {/* Baggage info */}
+              <div className="space-y-2 pt-1 text-xs">
+                <div className="flex items-center justify-between text-slate-600 bg-slate-50 px-3 py-2 rounded-lg">
+                  <span className="flex items-center gap-2">
+                    <Luggage className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Cabin baggage</span>
+                  </span>
+                  <span className="font-bold text-slate-900">{selectedFlight.cabinBaggage}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-slate-600 bg-slate-50 px-3 py-2 rounded-lg">
+                  <span className="flex items-center gap-2">
+                    <Luggage className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Checked baggage</span>
+                  </span>
+                  <span className="font-bold text-slate-900">{selectedFlight.checkedBaggage}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom floating bar */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Price</span>
+                <span className="text-xl font-black text-slate-900">${selectedFlight.price}</span>
+                <span className="text-[10px] text-slate-500 ml-1 font-medium">(per person)</span>
+              </div>
+
+              <button
+                onClick={() => setCurrentScreen('select_seat')}
+                className="px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/25"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* SCREEN 4: SELECT SEAT */}
+      {/* ======================================================== */}
+      {currentScreen === 'select_seat' && (
+        <div className="flex-1 flex flex-col pt-safe-top pb-safe-bottom mb-20 overflow-y-auto">
+          {/* Header */}
+          <div className="px-4 py-3.5 bg-white border-b border-slate-150 flex items-center justify-between sticky top-0 z-20">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCurrentScreen('flight_details')}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900">Select Seat</h3>
+                <p className="text-[11px] text-slate-500 font-medium">HGA ➔ MGQ • Sun, Nov 15 • 1h 20m</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Airplane Fuselage Container */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs max-w-sm mx-auto w-full">
+              {/* Airplane Nose Shape */}
+              <div className="w-28 h-10 border-t-2 border-x-2 border-slate-300 rounded-t-full mx-auto mb-4 flex items-center justify-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cockpit</span>
+              </div>
+
+              {/* Column Headers */}
+              <div className="grid grid-cols-7 text-center text-xs font-black text-slate-400 mb-3">
+                <span>A</span>
+                <span>B</span>
+                <span>C</span>
+                <span className="text-[10px] text-slate-300">AISLE</span>
+                <span>D</span>
+                <span>E</span>
+                <span>F</span>
+              </div>
+
+              {/* Seat Rows */}
+              <div className="space-y-2.5">
+                {seatRows.map((row) => (
+                  <div key={row} className="grid grid-cols-7 items-center text-center">
+                    {/* Seat A */}
+                    {(() => {
+                      const seatId = `${row}A`;
+                      const isOcc = occupiedSeats.includes(seatId);
+                      const isSel = selectedSeat === seatId;
+                      return (
+                        <button
+                          disabled={isOcc}
+                          onClick={() => setSelectedSeat(seatId)}
+                          className={`w-8 h-8 rounded-lg mx-auto flex items-center justify-center text-[10px] font-bold transition ${
+                            isSel
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                              : isOcc
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-blue-50 text-blue-900 hover:bg-blue-100'
+                          }`}
+                        >
+                          {isSel ? <Check className="w-3.5 h-3.5" /> : seatId}
+                        </button>
+                      );
+                    })()}
+
+                    {/* Seat B */}
+                    {(() => {
+                      const seatId = `${row}B`;
+                      const isOcc = occupiedSeats.includes(seatId);
+                      const isSel = selectedSeat === seatId;
+                      return (
+                        <button
+                          disabled={isOcc}
+                          onClick={() => setSelectedSeat(seatId)}
+                          className={`w-8 h-8 rounded-lg mx-auto flex items-center justify-center text-[10px] font-bold transition ${
+                            isSel
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                              : isOcc
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-blue-50 text-blue-900 hover:bg-blue-100'
+                          }`}
+                        >
+                          {isSel ? <Check className="w-3.5 h-3.5" /> : seatId}
+                        </button>
+                      );
+                    })()}
+
+                    {/* Seat C */}
+                    {(() => {
+                      const seatId = `${row}C`;
+                      const isOcc = occupiedSeats.includes(seatId);
+                      const isSel = selectedSeat === seatId;
+                      return (
+                        <button
+                          disabled={isOcc}
+                          onClick={() => setSelectedSeat(seatId)}
+                          className={`w-8 h-8 rounded-lg mx-auto flex items-center justify-center text-[10px] font-bold transition ${
+                            isSel
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                              : isOcc
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-blue-50 text-blue-900 hover:bg-blue-100'
+                          }`}
+                        >
+                          {isSel ? <Check className="w-3.5 h-3.5" /> : seatId}
+                        </button>
+                      );
+                    })()}
+
+                    {/* Row Number in Aisle */}
+                    <span className="text-[11px] font-bold text-slate-400">{row}</span>
+
+                    {/* Seat D */}
+                    {(() => {
+                      const seatId = `${row}D`;
+                      const isOcc = occupiedSeats.includes(seatId);
+                      const isSel = selectedSeat === seatId;
+                      return (
+                        <button
+                          disabled={isOcc}
+                          onClick={() => setSelectedSeat(seatId)}
+                          className={`w-8 h-8 rounded-lg mx-auto flex items-center justify-center text-[10px] font-bold transition ${
+                            isSel
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                              : isOcc
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-blue-50 text-blue-900 hover:bg-blue-100'
+                          }`}
+                        >
+                          {isSel ? <Check className="w-3.5 h-3.5" /> : seatId}
+                        </button>
+                      );
+                    })()}
+
+                    {/* Seat E */}
+                    {(() => {
+                      const seatId = `${row}E`;
+                      const isOcc = occupiedSeats.includes(seatId);
+                      const isSel = selectedSeat === seatId;
+                      return (
+                        <button
+                          disabled={isOcc}
+                          onClick={() => setSelectedSeat(seatId)}
+                          className={`w-8 h-8 rounded-lg mx-auto flex items-center justify-center text-[10px] font-bold transition ${
+                            isSel
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                              : isOcc
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-blue-50 text-blue-900 hover:bg-blue-100'
+                          }`}
+                        >
+                          {isSel ? <Check className="w-3.5 h-3.5" /> : seatId}
+                        </button>
+                      );
+                    })()}
+
+                    {/* Seat F */}
+                    {(() => {
+                      const seatId = `${row}F`;
+                      const isOcc = occupiedSeats.includes(seatId);
+                      const isSel = selectedSeat === seatId;
+                      return (
+                        <button
+                          disabled={isOcc}
+                          onClick={() => setSelectedSeat(seatId)}
+                          className={`w-8 h-8 rounded-lg mx-auto flex items-center justify-center text-[10px] font-bold transition ${
+                            isSel
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                              : isOcc
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-blue-50 text-blue-900 hover:bg-blue-100'
+                          }`}
+                        >
+                          {isSel ? <Check className="w-3.5 h-3.5" /> : seatId}
+                        </button>
+                      );
+                    })()}
+                  </div>
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center justify-around border-t border-slate-100 mt-5 pt-4 text-xs font-medium text-slate-500">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3.5 h-3.5 rounded bg-blue-50 border border-blue-200"></div>
+                  <span>Available</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3.5 h-3.5 rounded bg-blue-600"></div>
+                  <span className="font-bold text-slate-800">Selected</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3.5 h-3.5 rounded bg-slate-200"></div>
+                  <span>Unavailable</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom floating action */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">1 Seat Selected</span>
+                <span className="text-xl font-black text-slate-900">{selectedSeat}</span>
+              </div>
+
+              <button
+                onClick={() => setCurrentScreen('payment')}
+                className="px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/25"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* SCREEN 5: PAYMENT */}
+      {/* ======================================================== */}
+      {currentScreen === 'payment' && (
+        <div className="flex-1 flex flex-col pt-safe-top pb-safe-bottom mb-20 overflow-y-auto">
+          {/* Header */}
+          <div className="px-4 py-3.5 bg-white border-b border-slate-150 flex items-center justify-between sticky top-0 z-20">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCurrentScreen('select_seat')}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h3 className="font-extrabold text-base text-slate-900">Payment</h3>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Flight Summary Card */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Flight Summary</span>
+                <button
+                  onClick={() => setCurrentScreen('flight_details')}
+                  className="text-xs font-bold text-blue-600 hover:underline"
+                >
+                  Edit
+                </button>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-base text-slate-900">HGA ➔ MGQ</h4>
+                <p className="text-xs text-slate-500 font-medium">Sun, Nov 15, 2026 • 1 Adult • Seat {selectedSeat}</p>
+                <p className="text-xs text-blue-600 font-semibold mt-0.5">
+                  ✈ {selectedFlight.airline} {selectedFlight.flightNumber} • Non-stop
+                </p>
+              </div>
+
+              <div className="border-t border-slate-100 pt-3 space-y-1.5 text-xs text-slate-600">
+                <div className="flex items-center justify-between">
+                  <span>Base Fare</span>
+                  <span className="font-bold text-slate-900">${selectedFlight.baseFare}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Taxes & Fees</span>
+                  <span className="font-bold text-slate-900">${selectedFlight.taxes}</span>
+                </div>
+                <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-sm font-black text-slate-900">
+                  <span>Total</span>
+                  <span className="text-lg text-blue-600">${selectedFlight.price}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Choose Payment Method */}
+            <div className="space-y-2.5">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block ml-1">
+                Choose Payment Method
+              </span>
+
+              {/* Option 1: Mobile Money (Zaad / eDahab) */}
+              <div
+                onClick={() => setPaymentMethod('mobile')}
+                className={`p-4 rounded-2xl border transition cursor-pointer ${
+                  paymentMethod === 'mobile'
+                    ? 'bg-white border-blue-500 shadow-sm ring-1 ring-blue-500'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900">Mobile Money</h4>
+                      <p className="text-xs text-slate-500">Zaad / eDahab</p>
+                    </div>
+                  </div>
                   <div
-                    key={c.id}
-                    className={`p-3 rounded-2xl text-xs max-w-[85%] ${
-                      isStaff
-                        ? 'bg-slate-800 text-slate-200 mr-auto rounded-tl-none border border-slate-700'
-                        : 'bg-blue-600 text-white ml-auto rounded-tr-none'
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                      paymentMethod === 'mobile'
+                        ? 'border-blue-600 bg-blue-600 text-white'
+                        : 'border-slate-300'
                     }`}
                   >
-                    <span className="text-[10px] block opacity-75 font-semibold mb-1">
-                      {isStaff ? 'Kanimo Concierge Agent' : 'You'}
-                    </span>
-                    {c.message}
+                    {paymentMethod === 'mobile' && <Check className="w-3 h-3" />}
                   </div>
-                );
-              })}
-            </div>
+                </div>
 
-            <form onSubmit={handleSendSupportComment} className="p-3 border-t border-slate-800 flex gap-2">
-              <input
-                type="text"
-                value={supportComment}
-                onChange={(e) => setSupportComment(e.target.value)}
-                placeholder="Reply to concierge..."
-                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-              />
-              <button
-                type="submit"
-                disabled={!supportComment.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold disabled:opacity-50"
+                {paymentMethod === 'mobile' && (
+                  <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setMobileProvider('ZAAD')}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold ${
+                          mobileProvider === 'ZAAD'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        Zaad Service
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMobileProvider('EDAHAB')}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold ${
+                          mobileProvider === 'EDAHAB'
+                            ? 'bg-amber-600 text-white'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        eDahab
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value)}
+                      placeholder="e.g. +252 63 445 9988"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Option 2: Card Payment */}
+              <div
+                onClick={() => setPaymentMethod('card')}
+                className={`p-4 rounded-2xl border transition cursor-pointer flex items-center justify-between ${
+                  paymentMethod === 'card'
+                    ? 'bg-white border-blue-500 shadow-sm ring-1 ring-blue-500'
+                    : 'bg-white border-slate-200'
+                }`}
               >
-                Send
-              </button>
-            </form>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-900">Card Payment</h4>
+                    <p className="text-xs text-slate-500">Visa / Mastercard</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400" />
+              </div>
+
+              {/* Option 3: Bank Transfer */}
+              <div
+                onClick={() => setPaymentMethod('bank')}
+                className={`p-4 rounded-2xl border transition cursor-pointer flex items-center justify-between ${
+                  paymentMethod === 'bank'
+                    ? 'bg-white border-blue-500 shadow-sm ring-1 ring-blue-500'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center shrink-0">
+                    <Landmark className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-900">Bank Transfer</h4>
+                    <p className="text-xs text-slate-500">Direct Account Deposit</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400" />
+              </div>
+            </div>
+
+            {/* Pay Now Button */}
+            <button
+              onClick={handlePayNow}
+              disabled={paymentProcessing}
+              className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black text-base shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition"
+            >
+              {paymentProcessing ? (
+                <>
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  <span>Processing Payment...</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Pay Now ${selectedFlight.price}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Success Modal */}
+      {paymentDone && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900">Payment Successful!</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Your flight has been booked and your digital boarding pass has been issued.
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 text-xs text-left space-y-1">
+              <p className="font-bold text-slate-900">Daallo Airlines D4721</p>
+              <p className="text-slate-500">Seat {selectedSeat} • Sun, Nov 15, 2026</p>
+              <p className="font-bold text-emerald-600">Total Paid: ${selectedFlight.price}</p>
+            </div>
+            <button
+              onClick={() => {
+                setPaymentDone(false);
+                handleTabChange('bookings');
+              }}
+              className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md"
+            >
+              View My Bookings
+            </button>
           </div>
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* MODAL: CREATE SUPPORT TICKET                             */}
+      {/* SCREEN 6: MY BOOKINGS */}
       {/* ======================================================== */}
-      {showNewSupportModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-3xl max-w-sm w-full p-6 border border-slate-800 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <h3 className="font-bold text-sm text-white">New Support Ticket</h3>
-              <button onClick={() => setShowNewSupportModal(false)} className="text-slate-400">
-                ✕
+      {currentScreen === 'bookings' && (
+        <div className="flex-1 flex flex-col pt-safe-top pb-safe-bottom mb-20 overflow-y-auto">
+          {/* Header */}
+          <div className="px-4 py-3.5 bg-white border-b border-slate-150 sticky top-0 z-20">
+            <h3 className="font-extrabold text-lg text-slate-900">My Bookings</h3>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Filter Tabs */}
+            <div className="flex bg-slate-200/80 p-1 rounded-xl">
+              <button
+                onClick={() => setBookingFilter('upcoming')}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition ${
+                  bookingFilter === 'upcoming'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Upcoming
+              </button>
+              <button
+                onClick={() => setBookingFilter('past')}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition ${
+                  bookingFilter === 'past'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Past
               </button>
             </div>
 
-            <form onSubmit={handleCreateSupport} className="space-y-3">
-              <div>
-                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                  Subject
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newSupportSubject}
-                  onChange={(e) => setNewSupportSubject(e.target.value)}
-                  placeholder="e.g. Dietary meal request"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-                />
-              </div>
+            {/* Booking Cards */}
+            <div className="space-y-3">
+              {bookingsList
+                .filter((b) => (bookingFilter === 'upcoming' ? !b.isPast : b.isPast))
+                .map((b) => (
+                  <div
+                    key={b.id}
+                    onClick={() => setActiveBoardingPass(b)}
+                    className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:shadow-md transition cursor-pointer space-y-3"
+                  >
+                    {/* Status Pill */}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                          b.status === 'Confirmed'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : b.status === 'Ticketed'
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        <span>{b.status}</span>
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </div>
 
-              <div>
-                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                  Category
-                </label>
-                <select
-                  value={newSupportCategory}
-                  onChange={(e) => setNewSupportCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-                >
-                  <option value="BOOKING_CHANGE">Booking Change</option>
-                  <option value="CANCELLATION">Cancellation / Refund</option>
-                  <option value="BAGGAGE">Baggage Assistance</option>
-                  <option value="SEAT_UPGRADE">Seat Upgrade</option>
-                  <option value="GENERAL">General Inquiry</option>
-                </select>
-              </div>
+                    {/* Route */}
+                    <div>
+                      <h4 className="font-extrabold text-base text-slate-900">
+                        {b.from} ➔ {b.to}
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium">
+                        {b.date} • {b.passengers}
+                      </p>
+                    </div>
 
-              <div>
-                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                  Details
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={newSupportMessage}
-                  onChange={(e) => setNewSupportMessage(e.target.value)}
-                  placeholder="Describe your request..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
-                />
-              </div>
+                    {/* Airline & Times */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <AirlineBadge airline={b.airline} code={b.flightNumber} />
+                        <div>
+                          <span className="font-bold text-slate-900 block">{b.airline}</span>
+                          <span className="text-[10px] text-slate-400 font-medium">{b.flightNumber}</span>
+                        </div>
+                      </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNewSupportModal(false)}
-                  className="px-3 py-1.5 text-xs text-slate-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={supportLoading}
-                  className="px-4 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-sm"
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
+                      <div className="text-right">
+                        <span className="font-black text-slate-900 block">
+                          {b.depTime} - {b.arrTime}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium">{b.duration}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* BOTTOM NAVIGATION BAR WITH SAFE AREA INSET               */}
+      {/* SCREEN: EXPLORE */}
       {/* ======================================================== */}
-      <nav 
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 32px)' }}
-        className="fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 pt-2 flex items-center justify-around z-30 shadow-2xl"
-      >
-        <button
-          onClick={() => setActiveTab('explore')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition ${
-            activeTab === 'explore' ? 'text-blue-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          <Search className="w-5 h-5" />
-          <span className="text-[10px]">Explore</span>
-        </button>
+      {currentScreen === 'explore' && (
+        <div className="flex-1 flex flex-col pt-safe-top pb-safe-bottom mb-20 overflow-y-auto">
+          <div className="px-4 py-3.5 bg-white border-b border-slate-150 sticky top-0 z-20">
+            <h3 className="font-extrabold text-lg text-slate-900">Explore Destinations</h3>
+            <p className="text-xs text-slate-500">Popular routes with instant booking</p>
+          </div>
 
-        <button
-          onClick={() => setActiveTab('wallet')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition ${
-            activeTab === 'wallet' ? 'text-blue-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          <Ticket className="w-5 h-5" />
-          <span className="text-[10px]">My Passes</span>
-        </button>
+          <div className="p-4 space-y-3">
+            {[
+              {
+                city: 'Dubai (DXB)',
+                price: '$520 Round Trip',
+                duration: '2h 45m • Direct',
+                img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80',
+              },
+              {
+                city: 'Istanbul (IST)',
+                price: '$680 Round Trip',
+                duration: '6h 20m • 1 Stop',
+                img: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80',
+              },
+              {
+                city: 'Nairobi (NBO)',
+                price: '$750 Round Trip',
+                duration: '8h 15m • 1 Stop',
+                img: 'https://images.unsplash.com/photo-1619865668616-e57caeb67fc1?auto=format&fit=crop&w=800&q=80',
+              },
+              {
+                city: 'London (LHR)',
+                price: '$820 Round Trip',
+                duration: '10h 30m • 1 Stop',
+                img: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=800&q=80',
+              },
+              {
+                city: 'Doha (DOH)',
+                price: '$640 Round Trip',
+                duration: '6h 45m • 1 Stop',
+                img: 'https://images.unsplash.com/photo-1568084680786-a84f91d1153c?auto=format&fit=crop&w=800&q=80',
+              },
+            ].map((dest) => (
+              <div
+                key={dest.city}
+                onClick={() => {
+                  setToCode(dest.city.slice(dest.city.indexOf('(') + 1, dest.city.indexOf(')')));
+                  setCurrentScreen('search_results');
+                }}
+                className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs cursor-pointer flex gap-3 p-3 items-center"
+              >
+                <img src={dest.img} alt={dest.city} className="w-20 h-20 rounded-xl object-cover" />
+                <div className="flex-1">
+                  <h4 className="font-extrabold text-sm text-slate-900">{dest.city}</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">{dest.duration}</p>
+                  <span className="inline-block mt-1 text-xs font-black text-blue-600">{dest.price}</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition ${
-            activeTab === 'orders' ? 'text-blue-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          <Luggage className="w-5 h-5" />
-          <span className="text-[10px]">Bookings</span>
-        </button>
+      {/* ======================================================== */}
+      {/* SCREEN: PROFILE */}
+      {/* ======================================================== */}
+      {currentScreen === 'profile' && (
+        <div className="flex-1 flex flex-col pt-safe-top pb-safe-bottom mb-20 overflow-y-auto">
+          <div className="px-4 py-3.5 bg-white border-b border-slate-150 sticky top-0 z-20">
+            <h3 className="font-extrabold text-lg text-slate-900">Profile & Account</h3>
+          </div>
 
-        <button
-          onClick={() => setActiveTab('support')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition ${
-            activeTab === 'support' ? 'text-blue-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          <LifeBuoy className="w-5 h-5" />
-          <span className="text-[10px]">Support</span>
-        </button>
+          <div className="p-4 space-y-4">
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 text-center space-y-2">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xl flex items-center justify-center mx-auto shadow-md">
+                KM
+              </div>
+              <div>
+                <h4 className="font-extrabold text-base text-slate-900">Kani Mo</h4>
+                <p className="text-xs text-slate-500 font-medium">kanimo@kanimo.com</p>
+                <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                  Verified Passenger
+                </span>
+              </div>
+            </div>
 
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition ${
-            activeTab === 'profile' ? 'text-blue-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          <User className="w-5 h-5" />
-          <span className="text-[10px]">Account</span>
-        </button>
+            <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+              <div
+                onClick={() => handleTabChange('bookings')}
+                className="p-4 flex items-center justify-between cursor-pointer"
+              >
+                <span>My Bookings</span>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+              <div className="p-4 flex items-center justify-between">
+                <span>Phone: +252 63 445 9988</span>
+                <span className="text-emerald-600 text-[11px]">Zaad Active</span>
+              </div>
+              <div className="p-4 flex items-center justify-between">
+                <span>Connected Server</span>
+                <span className="text-blue-600 text-[10px] truncate max-w-[160px] font-mono">{apiBaseUrl}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* BOARDING PASS / QR CODE MODAL */}
+      {/* ======================================================== */}
+      {activeBoardingPass && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl animate-in zoom-in-95">
+            {/* Header */}
+            <div className="bg-blue-600 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Plane className="w-5 h-5 transform -rotate-45" />
+                <span className="font-extrabold text-sm">SkyTickets Boarding Pass</span>
+              </div>
+              <button
+                onClick={() => setActiveBoardingPass(null)}
+                className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 text-center space-y-4">
+              <div>
+                <span className="text-2xl font-black text-slate-900 block">
+                  {activeBoardingPass.fromCode} ➔ {activeBoardingPass.toCode}
+                </span>
+                <span className="text-xs text-slate-500 font-medium">
+                  {activeBoardingPass.airline} • {activeBoardingPass.flightNumber}
+                </span>
+              </div>
+
+              {/* Scannable QR Code */}
+              <div className="w-48 h-48 mx-auto bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-center p-2 shadow-inner">
+                <canvas ref={qrCanvasRef} className="w-full h-full" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 bg-slate-50 rounded-2xl p-3 border border-slate-100 text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Seat</span>
+                  <span className="font-black text-slate-900 text-base">{activeBoardingPass.seat}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Gate</span>
+                  <span className="font-black text-slate-900 text-base">{activeBoardingPass.gate}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Terminal</span>
+                  <span className="font-black text-slate-900 text-base">{activeBoardingPass.terminal}</span>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-slate-400 font-mono">
+                Security Hash: HMAC-SHA256 • Verified Pass
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* PERSISTENT BOTTOM NAVIGATION BAR WITH SAFE AREA INSETS */}
+      {/* ======================================================== */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 pb-safe-bottom shadow-lg">
+        <div className="flex items-center justify-around h-16 max-w-md mx-auto px-2">
+          {/* Home */}
+          <button
+            onClick={() => handleTabChange('home')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition ${
+              activeBottomTab === 'home' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <Plane className="w-5 h-5 transform -rotate-45" />
+            <span className="text-[10px] font-bold mt-1">Home</span>
+          </button>
+
+          {/* My Bookings */}
+          <button
+            onClick={() => handleTabChange('bookings')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition ${
+              activeBottomTab === 'bookings' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <Ticket className="w-5 h-5" />
+            <span className="text-[10px] font-bold mt-1">My Bookings</span>
+          </button>
+
+          {/* Explore */}
+          <button
+            onClick={() => handleTabChange('explore')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition ${
+              activeBottomTab === 'explore' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <Compass className="w-5 h-5" />
+            <span className="text-[10px] font-bold mt-1">Explore</span>
+          </button>
+
+          {/* Profile */}
+          <button
+            onClick={() => handleTabChange('profile')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition ${
+              activeBottomTab === 'profile' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <UserIcon className="w-5 h-5" />
+            <span className="text-[10px] font-bold mt-1">Profile</span>
+          </button>
+        </div>
       </nav>
     </div>
   );

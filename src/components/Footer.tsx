@@ -4,40 +4,40 @@ import { Plane, ShieldCheck, Clock, Award, Globe, PhoneCall } from 'lucide-react
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 border-t border-slate-800 text-slate-400 text-sm">
+    <footer className="bg-[#081226] border-t border-slate-800 text-slate-400 text-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand info */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
                 <Plane className="w-4 h-4 text-white transform -rotate-45" />
               </div>
-              <span className="font-extrabold text-base tracking-wider text-white">
-                KANIMO <span className="text-blue-400 font-light">AIRLINE</span>
+              <span className="font-extrabold text-lg tracking-tight text-white">
+                Sky<span className="text-blue-400">Tickets</span>
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Experience pinnacle aviation comfort with Kanimo Airline. Connecting world capitals with modern widebody fleets, biometric security, and lie-flat luxury suites.
+              Fly More • Explore More. The easiest way to search and book domestic and international airline tickets with instant confirmation and secure mobile payments.
             </p>
-            <div className="flex items-center gap-3 text-xs text-slate-400">
+            <div className="flex items-center gap-2 text-xs text-blue-400">
               <Globe className="w-4 h-4 text-blue-400" />
-              <span>Global Flight Operations</span>
+              <span>Horn of Africa & International Flight Network</span>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">Book & Manage</h4>
+            <h4 className="text-white font-semibold text-sm mb-3">Book & Explore</h4>
             <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/flights" className="hover:text-blue-400 transition-colors">
-                  Explore Destinations
+                  Search Flights
                 </Link>
               </li>
               <li>
                 <Link href="/wallet" className="hover:text-blue-400 transition-colors">
-                  Digital Boarding Passes
+                  My Bookings & Boarding Passes
                 </Link>
               </li>
               <li>
@@ -47,7 +47,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/support" className="hover:text-blue-400 transition-colors">
-                  Passenger Assistance & Support
+                  Customer Help Desk
                 </Link>
               </li>
             </ul>
@@ -55,45 +55,42 @@ export default function Footer() {
 
           {/* Security & Reliability */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">Security & Trust</h4>
+            <h4 className="text-white font-semibold text-sm mb-3">Guaranteed Security</h4>
             <ul className="space-y-2 text-xs">
               <li className="flex items-center gap-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>HMAC-SHA256 Signed Boarding Passes</span>
+                <span>Encrypted Booking & Digital Passes</span>
               </li>
               <li className="flex items-center gap-2">
                 <Clock className="w-3.5 h-3.5 text-blue-400" />
-                <span>Transactional Inventory Protection</span>
+                <span>Zaad, eDahab & Visa/Mastercard</span>
               </li>
               <li className="flex items-center gap-2">
                 <Award className="w-3.5 h-3.5 text-amber-400" />
-                <span>Zero-Overselling Concurrency Engine</span>
+                <span>Direct Airline Ticket Issuance</span>
               </li>
             </ul>
           </div>
 
           {/* Contact & Support */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">Customer Concierge</h4>
+            <h4 className="text-white font-semibold text-sm mb-3">24/7 Support Service</h4>
             <p className="text-xs text-slate-400 mb-2">
-              Our 24/7 flight concierge is available for booking inquiries, baggage tracing, and VIP services.
+              Our 24/7 flight concierge is available for booking inquiries, ticket changes, and passenger support.
             </p>
             <div className="flex items-center gap-2 text-xs text-blue-400 font-semibold">
               <PhoneCall className="w-3.5 h-3.5" />
-              <span>+1 (800) 526-4660 (Toll-Free)</span>
+              <span>+252 (63) 445-9988 / +1 (800) 526-4660</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">support@kanimo-airline.com</p>
+            <p className="text-[11px] text-slate-400 mt-2">support@skytickets.com</p>
           </div>
         </div>
 
         <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <p>© {new Date().getFullYear()} Kanimo Airline Systems Inc. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} SkyTickets Airline Network. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <span className="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700">
-              Vercel Production Ready
-            </span>
-            <span className="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700">
-              Android Native APK Connected
+            <span className="text-[11px] bg-slate-900 text-slate-300 px-2.5 py-1 rounded-full border border-slate-800">
+              SkyTickets Web & Mobile App Connected
             </span>
           </div>
         </div>
