@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plane, Radio, Compass } from 'lucide-react';
+import { Plane, Radio, Gauge } from 'lucide-react';
 
 interface AirplaneLandingLoaderProps {
   title?: string;
@@ -12,10 +12,10 @@ export default function AirplaneLandingLoader({
   subtitle = 'Kanimo Skyways Flight Navigation & Inventory System',
   fullScreen = true,
 }: AirplaneLandingLoaderProps) {
-  const [altitude, setAltitude] = useState(1250);
-  const [airspeed, setAirspeed] = useState(155);
-  const [loadingPhase, setLoadingPhase] = useState('Glideslope Intercept');
-  const [progress, setProgress] = useState(15);
+  const [altitude, setAltitude] = useState(1200);
+  const [airspeed, setAirspeed] = useState(150);
+  const [loadingPhase, setLoadingPhase] = useState('2D Glideslope Approach');
+  const [progress, setProgress] = useState(18);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -25,13 +25,13 @@ export default function AirplaneLandingLoader({
       });
 
       setAltitude((prev) => {
-        if (prev <= 40) return 30;
-        return Math.max(30, prev - 25);
+        if (prev <= 0) return 0;
+        return Math.max(0, prev - 24);
       });
 
       setAirspeed((prev) => {
-        if (prev <= 132) return 130;
-        return Math.max(130, prev - 1);
+        if (prev <= 55) return 50;
+        return Math.max(50, prev - 2);
       });
     }, 70);
 
@@ -40,13 +40,13 @@ export default function AirplaneLandingLoader({
 
   useEffect(() => {
     if (progress < 30) {
-      setLoadingPhase('ILS CAT-III Localizer Captured');
+      setLoadingPhase('2D Glideslope Approach • Descending from 1,200 FT');
     } else if (progress < 60) {
-      setLoadingPhase('Gear Down • Flaps 30° • Glideslope Locked');
+      setLoadingPhase('Runway 05 In Sight • Gear Deployed & Flaps 30°');
     } else if (progress < 85) {
-      setLoadingPhase('Runway In Sight • 500ft Above Ground');
+      setLoadingPhase('2D Flare • Main Gear Runway Touchdown');
     } else {
-      setLoadingPhase('Threshold Crossed • Touchdown & Reverse Thrust');
+      setLoadingPhase('Touchdown Confirmed • Reverse Thrust & Rollout');
     }
   }, [progress]);
 
@@ -57,296 +57,417 @@ export default function AirplaneLandingLoader({
   return (
     <div className={containerClass}>
       <style>{`
-        @keyframes floatCloud {
-          0% { transform: translateX(120%); opacity: 0; }
-          20% { opacity: 0.35; }
-          80% { opacity: 0.35; }
-          100% { transform: translateX(-120%); opacity: 0; }
+        /* 2D Cloud Floating */
+        @keyframes cloudDrift2D {
+          0% { transform: translateX(110%); }
+          100% { transform: translateX(-110%); }
         }
 
-        @keyframes runwayCenterline {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(80px); }
-        }
-
-        @keyframes runwayLightsPulse {
-          0%, 100% { opacity: 0.4; filter: drop-shadow(0 0 2px #38bdf8); }
-          50% { opacity: 1; filter: drop-shadow(0 0 8px #38bdf8); }
-        }
-
-        @keyframes airplaneLandingFlight {
+        /* Pure 2D Airplane Landing Flight Motion */
+        @keyframes planeLanding2D {
           0% {
-            transform: translate(-90px, -70px) scale(0.65) rotate(4deg);
+            transform: translate(-100px, 12px) rotate(8deg);
+            opacity: 0;
           }
-          40% {
-            transform: translate(-30px, -20px) scale(0.82) rotate(6deg);
+          10% {
+            transform: translate(-30px, 32px) rotate(7.5deg);
+            opacity: 1;
           }
-          70% {
-            transform: translate(15px, 25px) scale(0.96) rotate(2deg);
+          35% {
+            transform: translate(60px, 68px) rotate(7deg);
           }
-          85% {
-            transform: translate(35px, 42px) scale(1) rotate(0deg);
+          52% {
+            /* 2D Flare: Nose pitches up smoothly right before wheel touchdown */
+            transform: translate(125px, 92px) rotate(-1.5deg);
+          }
+          64% {
+            /* Touchdown: Main gear hits runway surface line */
+            transform: translate(175px, 102px) rotate(0deg);
+          }
+          78% {
+            /* Rolling along flat runway */
+            transform: translate(255px, 102px) rotate(0deg);
+            opacity: 1;
+          }
+          92% {
+            transform: translate(350px, 102px) rotate(0deg);
+            opacity: 1;
           }
           100% {
-            transform: translate(65px, 46px) scale(0.98) rotate(-1deg);
+            transform: translate(430px, 102px) rotate(0deg);
+            opacity: 0;
           }
         }
 
-        @keyframes wheelTouchdownSmoke {
-          0%, 65% { opacity: 0; transform: scale(0.2); }
-          72% { opacity: 0.85; transform: scale(1.2) translateY(-2px); }
-          85% { opacity: 0.4; transform: scale(1.6) translateY(-8px); }
-          100% { opacity: 0; transform: scale(2) translateY(-14px); }
+        /* 2D Touchdown Smoke Puffs */
+        @keyframes smokePuff2D {
+          0%, 60% {
+            transform: scale(0.2);
+            opacity: 0;
+          }
+          64% {
+            transform: scale(0.8) translate(-4px, -2px);
+            opacity: 0.9;
+          }
+          74% {
+            transform: scale(1.6) translate(-14px, -8px);
+            opacity: 0.4;
+          }
+          85%, 100% {
+            transform: scale(2.2) translate(-24px, -14px);
+            opacity: 0;
+          }
         }
 
-        .animate-cloud-fast {
-          animation: floatCloud 7s linear infinite;
+        /* Flat Runway Centerline Dash Movement */
+        @keyframes runwayCenterline2D {
+          0% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: -48; }
         }
-        .animate-cloud-slow {
-          animation: floatCloud 12s linear infinite;
+
+        /* 2D Runway Edge Lights Blinking */
+        @keyframes runwayLightPulse2D {
+          0%, 100% { opacity: 0.5; filter: drop-shadow(0 0 1px #38bdf8); }
+          50% { opacity: 1; filter: drop-shadow(0 0 5px #38bdf8); }
         }
-        .animate-landing-plane {
-          animation: airplaneLandingFlight 3.2s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+
+        .animate-cloud-2d-slow {
+          animation: cloudDrift2D 14s linear infinite;
         }
-        .animate-touchdown-smoke {
-          animation: wheelTouchdownSmoke 3.2s ease-out infinite;
+        .animate-cloud-2d-fast {
+          animation: cloudDrift2D 9s linear infinite;
         }
-        .animate-runway-lights {
-          animation: runwayLightsPulse 1.2s ease-in-out infinite;
+        .animate-landing-plane-2d {
+          animation: planeLanding2D 3.4s cubic-bezier(0.35, 0.1, 0.25, 1) infinite;
+        }
+        .animate-smoke-2d {
+          animation: smokePuff2D 3.4s ease-out infinite;
+        }
+        .animate-centerline-2d {
+          animation: runwayCenterline2D 1.2s linear infinite;
+        }
+        .animate-runway-lights-2d {
+          animation: runwayLightPulse2D 1.5s ease-in-out infinite;
         }
       `}</style>
 
-      {/* Atmospheric Starfield / Night Ambient Background */}
-      <div className="absolute inset-0 bg-radial from-blue-950/40 via-[#070d19] to-[#04070e] pointer-events-none" />
+      {/* Atmospheric Starfield & Clean Twilight 2D Ambient Glow */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#060c18] via-[#09152b] to-[#040813] pointer-events-none" />
 
-      {/* Ambient Clouds */}
-      <div className="absolute top-12 left-0 right-0 h-24 overflow-hidden pointer-events-none">
-        <div className="animate-cloud-slow absolute -top-4 w-52 h-16 bg-blue-500/10 rounded-full blur-2xl" />
-        <div className="animate-cloud-fast absolute top-6 w-72 h-20 bg-indigo-500/10 rounded-full blur-3xl" />
-      </div>
-
-      {/* Cockpit HUD Glideslope Telemetry Header */}
-      <div className="relative z-10 w-full max-w-sm mx-auto mb-2.5 flex items-center justify-between px-3.5 py-1.5 bg-slate-900/80 border border-slate-800/80 rounded-2xl backdrop-blur-md shadow-lg text-[9px] font-mono tracking-wider">
+      {/* 2D HUD Telemetry Strip */}
+      <div className="relative z-10 w-full max-w-md mx-auto mb-3 flex items-center justify-between px-4 py-2 bg-slate-900/85 border border-slate-800 rounded-2xl shadow-lg text-[10px] font-mono tracking-wider">
         <div className="flex items-center gap-1.5 text-emerald-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-          <span className="font-bold">ILS RWY 05</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="font-bold">2D RUNWAY 05</span>
         </div>
         <div className="text-slate-300">
-          ALT <span className="text-amber-400 font-bold">{altitude} FT</span>
+          ALT <span className="text-amber-400 font-bold">{altitude > 0 ? `${altitude} FT` : 'TOUCHDOWN'}</span>
         </div>
         <div className="text-slate-300">
           SPD <span className="text-sky-400 font-bold">{airspeed} KTS</span>
         </div>
         <div className="text-blue-400 font-bold flex items-center gap-1">
-          <Compass className="w-3 h-3 animate-spin" />
-          <span>052°</span>
+          <Gauge className="w-3 h-3 text-cyan-400" />
+          <span>FLAPS 30°</span>
         </div>
       </div>
 
-      {/* MAIN VISUAL: AIRPLANE APPROACHING & LANDING ON RUNWAY */}
-      <div className="relative z-10 w-full max-w-sm h-52 flex items-center justify-center overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-b from-[#09152a] via-[#081122] to-[#040813] shadow-inner">
-        {/* Horizon Line with Twilight Glow */}
-        <div className="absolute top-1/3 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
-        <div className="absolute top-1/3 -translate-y-1/2 left-0 right-0 h-8 bg-cyan-500/5 blur-lg" />
+      {/* PURE 2D AIRPLANE RUNWAY LANDING STAGE */}
+      <div className="relative z-10 w-full max-w-md h-52 rounded-3xl border border-slate-800 bg-[#070e1e] overflow-hidden shadow-2xl flex items-center justify-center">
+        {/* SVG Viewport (440 x 180) - Strictly Flat 2D */}
+        <svg
+          viewBox="0 0 440 180"
+          className="w-full h-full select-none"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Flat 2D Sky Gradient */}
+          <rect width="440" height="180" fill="url(#skyGradient2D_mob)" />
 
-        {/* Airport Control Tower Silhouette */}
-        <div className="absolute top-8 left-8 opacity-30 pointer-events-none">
-          <div className="w-3.5 h-12 bg-slate-700/60 rounded-t-sm mx-auto" />
-          <div className="w-7 h-3.5 bg-slate-600/60 rounded-t-md mx-auto" />
-          <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping mx-auto -mt-5" />
-        </div>
+          {/* Twinkling 2D Stars in Night Sky */}
+          <g fill="#93c5fd" opacity="0.6">
+            <circle cx="35" cy="20" r="1" />
+            <circle cx="85" cy="38" r="1.2" />
+            <circle cx="150" cy="18" r="1" />
+            <circle cx="210" cy="32" r="1.2" />
+            <circle cx="295" cy="15" r="1" />
+            <circle cx="360" cy="28" r="1.2" />
+            <circle cx="410" cy="20" r="1" />
+          </g>
 
-        {/* PERSPECTIVE RUNWAY 05 */}
-        <div className="absolute bottom-0 w-60 h-32 flex flex-col items-center">
-          <svg className="w-full h-full" viewBox="0 0 260 140" fill="none">
-            <polygon
-              points="105,5 155,5 230,140 30,140"
-              fill="#0d1829"
-              stroke="#1e293b"
-              strokeWidth="1.5"
+          {/* Flat 2D Drifting Clouds */}
+          <g opacity="0.25">
+            <path
+              className="animate-cloud-2d-slow"
+              d="M320 30 Q330 18 348 20 Q362 12 378 22 Q392 20 398 32 Q404 42 390 44 L325 44 Q314 42 320 30 Z"
+              fill="#93c5fd"
             />
+            <path
+              className="animate-cloud-2d-fast"
+              d="M140 45 Q150 36 164 38 Q174 30 188 38 Q200 37 206 46 Q210 54 198 56 L144 56 Q135 54 140 45 Z"
+              fill="#60a5fa"
+            />
+          </g>
 
-            {/* Threshold Piano Keys */}
-            <g fill="#f8fafc" opacity="0.85">
-              <rect x="52" y="128" width="10" height="9" rx="1" />
-              <rect x="68" y="128" width="10" height="9" rx="1" />
-              <rect x="84" y="128" width="10" height="9" rx="1" />
-              <rect x="100" y="128" width="10" height="9" rx="1" />
-              <rect x="116" y="128" width="10" height="9" rx="1" />
-              <rect x="132" y="128" width="10" height="9" rx="1" />
-              <rect x="148" y="128" width="10" height="9" rx="1" />
-              <rect x="164" y="128" width="10" height="9" rx="1" />
-              <rect x="180" y="128" width="10" height="9" rx="1" />
-              <rect x="196" y="128" width="10" height="9" rx="1" />
+          {/* Distant Airfield Horizon Silhouette */}
+          <g fill="#13233f" opacity="0.75">
+            {/* Tower Shaft */}
+            <rect x="26" y="85" width="7" height="57" rx="1" />
+            {/* Tower Control Cab (Glass Hexagon) */}
+            <polygon points="23,85 36,85 38,76 21,76" fill="#1e3458" />
+            {/* Tower Radome Roof */}
+            <path d="M24 76 Q29.5 70 35 76 Z" fill="#2d4a7a" />
+            {/* Blinking Red Obstruction Beacon */}
+            <circle cx="29.5" cy="69" r="1.5" fill="#ef4444" className="animate-ping" />
+            {/* Terminal Roofline */}
+            <rect x="42" y="125" width="35" height="17" rx="2" fill="#0f1c33" />
+            <rect x="50" y="118" width="18" height="7" rx="1" fill="#152744" />
+          </g>
+
+          {/* Windsock Pole on Right (Flat 2D) */}
+          <g opacity="0.85">
+            <line x1="410" y1="118" x2="410" y2="142" stroke="#64748b" strokeWidth="1.5" />
+            <polygon points="410,120 425,123 425,127 410,126" fill="#f97316" />
+            <polygon points="415,121 420,122 420,127.5 415,126.5" fill="#f8fafc" />
+          </g>
+
+          {/* 2D Glideslope Dashed Descent Guide Line */}
+          <path
+            d="M -20 28 Q 110 65 175 142 L 440 142"
+            stroke="#38bdf8"
+            strokeWidth="1.2"
+            strokeDasharray="4 5"
+            opacity="0.3"
+          />
+
+          {/* FLAT 2D RUNWAY (Cross-section at y = 142) */}
+          <g>
+            {/* Runway Asphalt Surface */}
+            <rect x="0" y="142" width="440" height="38" fill="#0c1629" />
+            {/* Top Runway Edge Line */}
+            <line x1="0" y1="142" x2="440" y2="142" stroke="#334155" strokeWidth="1.5" />
+
+            {/* Threshold Piano Keys (Vertical White Bars) */}
+            <g fill="#f8fafc" opacity="0.9">
+              <rect x="12" y="146" width="3.5" height="14" rx="0.8" />
+              <rect x="19" y="146" width="3.5" height="14" rx="0.8" />
+              <rect x="26" y="146" width="3.5" height="14" rx="0.8" />
+              <rect x="33" y="146" width="3.5" height="14" rx="0.8" />
+              <rect x="40" y="146" width="3.5" height="14" rx="0.8" />
+              <rect x="47" y="146" width="3.5" height="14" rx="0.8" />
+              <rect x="54" y="146" width="3.5" height="14" rx="0.8" />
+              <rect x="61" y="146" width="3.5" height="14" rx="0.8" />
             </g>
 
+            {/* Runway Designation Number */}
             <text
-              x="130"
-              y="118"
-              fill="#e2e8f0"
+              x="82"
+              y="158"
+              fill="#f1f5f9"
               fontSize="12"
               fontWeight="900"
-              letterSpacing="2"
-              textAnchor="middle"
               fontFamily="monospace"
-              opacity="0.8"
+              letterSpacing="1"
+              opacity="0.85"
             >
               05
             </text>
 
-            {/* Centerline Dashes */}
-            <g fill="#facc15" opacity="0.9">
-              <rect x="127" y="15" width="6" height="12" rx="1" />
-              <rect x="126" y="38" width="8" height="15" rx="1" />
-              <rect x="125" y="65" width="10" height="18" rx="1.5" />
-              <rect x="124" y="93" width="12" height="22" rx="2" />
+            {/* Yellow Dashed Centerline */}
+            <line
+              x1="108"
+              y1="154"
+              x2="440"
+              y2="154"
+              stroke="#facc15"
+              strokeWidth="2"
+              strokeDasharray="16 12"
+              className="animate-centerline-2d"
+            />
+
+            {/* Green Threshold Edge Lights */}
+            <g fill="#22c55e">
+              <circle cx="8" cy="142" r="2" />
+              <circle cx="8" cy="142" r="4" fill="#22c55e" opacity="0.3" />
             </g>
 
-            {/* Left Edge Lights */}
-            <g className="animate-runway-lights" fill="#38bdf8">
-              <circle cx="103" cy="8" r="1.5" />
-              <circle cx="91" cy="30" r="2" />
-              <circle cx="75" cy="62" r="2.5" />
-              <circle cx="56" cy="98" r="3" />
-              <circle cx="34" cy="136" r="3.5" fill="#22c55e" />
+            {/* Amber Runway Edge Lights Along Runway Line */}
+            <g fill="#38bdf8" className="animate-runway-lights-2d">
+              <circle cx="110" cy="142" r="1.5" />
+              <circle cx="160" cy="142" r="1.5" />
+              <circle cx="210" cy="142" r="1.5" />
+              <circle cx="260" cy="142" r="1.5" />
+              <circle cx="310" cy="142" r="1.5" />
+              <circle cx="360" cy="142" r="1.5" />
+              <circle cx="410" cy="142" r="1.5" />
             </g>
+          </g>
 
-            {/* Right Edge Lights */}
-            <g className="animate-runway-lights" fill="#38bdf8">
-              <circle cx="157" cy="8" r="1.5" />
-              <circle cx="169" cy="30" r="2" />
-              <circle cx="185" cy="62" r="2.5" />
-              <circle cx="204" cy="98" r="3" />
-              <circle cx="226" cy="136" r="3.5" fill="#22c55e" />
-            </g>
-          </svg>
-        </div>
+          {/* 2D TOUCHDOWN TIRE SMOKE PUFFS */}
+          <g className="animate-smoke-2d" pointerEvents="none">
+            <circle cx="228" cy="141" r="5" fill="#cbd5e1" opacity="0.8" />
+            <circle cx="223" cy="139" r="4" fill="#e2e8f0" opacity="0.6" />
+            <circle cx="233" cy="140" r="3.5" fill="#94a3b8" opacity="0.7" />
+          </g>
 
-        {/* Touchdown Tire Smoke Puffs */}
-        <div className="animate-touchdown-smoke absolute bottom-7 z-20 pointer-events-none">
-          <div className="w-10 h-6 bg-slate-200/50 rounded-full blur-sm" />
-        </div>
+          {/* 2D AIRLINER VECTOR (Gliding, Flaring & Landing) */}
+          <g className="animate-landing-plane-2d">
+            {/* Airplane Landing Headlight Beam in 2D */}
+            <polygon
+              points="110,22 210,50 200,90 105,27"
+              fill="url(#headlightBeam2D_mob)"
+              opacity="0.3"
+            />
 
-        {/* GLIDING & LANDING COMMERCIAL AIRPLANE */}
-        <div className="animate-landing-plane relative z-30 flex items-center justify-center">
-          {/* Landing Light Beams */}
-          <div
-            className="absolute -bottom-6 -left-10 w-36 h-14 bg-gradient-to-r from-transparent via-cyan-300/20 to-white/30 transform -rotate-12 blur-sm pointer-events-none"
-            style={{ clipPath: 'polygon(0% 40%, 100% 0%, 100% 100%, 0% 60%)' }}
-          />
-
-          {/* SVG Passenger Jet */}
-          <svg className="w-32 h-20 filter drop-shadow(0 12px 16px rgba(0,0,0,0.7))" viewBox="0 0 200 120" fill="none">
-            {/* Fuselage */}
+            {/* Fuselage (Main Body) */}
             <path
-              d="M185 58 C185 54, 155 46, 110 46 C65 46, 32 50, 16 57 C8 60, 6 64, 14 67 C25 71, 60 72, 110 72 C155 72, 185 64, 185 58 Z"
-              fill="url(#mFuselageGrad)"
+              d="M 12 21 C 12 17, 28 15, 60 15 C 90 15, 106 17, 114 21 C 117 22.5, 117 25, 113 26.5 C 104 30, 85 31, 55 31 C 28 31, 12 26, 12 21 Z"
+              fill="url(#fuselageGradient2D_mob)"
               stroke="#60a5fa"
               strokeWidth="0.8"
             />
 
-            {/* Cockpit Window */}
-            <path d="M20 56 C24 53, 30 52, 34 53 C33 56, 28 58, 22 58 Z" fill="#38bdf8" opacity="0.9" />
+            {/* Cockpit Windshield */}
+            <path
+              d="M 103 18 C 106 18, 110 19, 112 21 L 105 22 Z"
+              fill="#38bdf8"
+            />
 
-            {/* Cabin Windows */}
-            <g fill="#93c5fd" opacity="0.85">
-              <rect x="44" y="55" width="3" height="4" rx="1" />
-              <rect x="52" y="55" width="3" height="4" rx="1" />
-              <rect x="60" y="55" width="3" height="4" rx="1" />
-              <rect x="68" y="55" width="3" height="4" rx="1" />
-              <rect x="76" y="55" width="3" height="4" rx="1" />
-              <rect x="84" y="55" width="3" height="4" rx="1" />
-              <rect x="92" y="55" width="3" height="4" rx="1" />
-              <rect x="100" y="55" width="3" height="4" rx="1" />
-              <rect x="108" y="55" width="3" height="4" rx="1" />
-              <rect x="116" y="55" width="3" height="4" rx="1" />
-              <rect x="124" y="55" width="3" height="4" rx="1" />
+            {/* Passenger Windows */}
+            <g fill="#93c5fd" opacity="0.9">
+              <rect x="34" y="20" width="3.5" height="3" rx="1" />
+              <rect x="41" y="20" width="3.5" height="3" rx="1" />
+              <rect x="48" y="20" width="3.5" height="3" rx="1" />
+              <rect x="55" y="20" width="3.5" height="3" rx="1" />
+              <rect x="62" y="20" width="3.5" height="3" rx="1" />
+              <rect x="69" y="20" width="3.5" height="3" rx="1" />
+              <rect x="76" y="20" width="3.5" height="3" rx="1" />
+              <rect x="83" y="20" width="3.5" height="3" rx="1" />
+              <rect x="90" y="20" width="3.5" height="3" rx="1" />
             </g>
 
-            {/* Blue and Gold Cheatlines */}
-            <path d="M16 60 Q95 62 175 58" stroke="#2563eb" strokeWidth="2.5" fill="none" />
-            <path d="M22 63 Q95 65 165 61" stroke="#f59e0b" strokeWidth="1.2" fill="none" />
+            {/* Kanimo Airline Cheatline Stripe */}
+            <path
+              d="M 14 24 Q 60 26 112 24"
+              stroke="#2563eb"
+              strokeWidth="1.8"
+              fill="none"
+            />
+            <path
+              d="M 16 26 Q 60 27.5 106 25.5"
+              stroke="#f59e0b"
+              strokeWidth="1"
+              fill="none"
+            />
 
-            {/* Tail Fin with Gold Crest */}
-            <path d="M150 46 L180 14 C184 10, 189 12, 187 18 L174 48 Z" fill="url(#mTailGrad)" stroke="#3b82f6" strokeWidth="0.8" />
-            <circle cx="178" cy="24" r="3.5" fill="#f59e0b" />
+            {/* Tail Fin */}
+            <path
+              d="M 15 17 L 3 3 C 2 1.5, 5 1.5, 8 2.5 L 30 15 Z"
+              fill="url(#tailGradient2D_mob)"
+              stroke="#3b82f6"
+              strokeWidth="0.8"
+            />
+            <circle cx="8" cy="6" r="2.2" fill="#f59e0b" />
 
-            {/* Horizontal Stabilizer */}
-            <path d="M165 57 L186 52 C189 51, 190 54, 187 56 L168 61 Z" fill="#1e3a8a" />
+            {/* Horizontal Tail Stabilizer */}
+            <polygon points="4,21 16,19 18,22 6,23" fill="#1e3a8a" />
 
-            {/* Swept Wing */}
-            <path d="M80 64 L115 88 C118 90, 122 89, 120 86 L108 65 Z" fill="url(#mWingGrad)" stroke="#3b82f6" strokeWidth="0.8" />
-            <path d="M115 88 L122 80" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+            {/* Swept Main Wing */}
+            <path
+              d="M 52 26 L 36 37 C 35 38, 38 38.5, 40 38 L 68 28 Z"
+              fill="url(#wingGradient2D_mob)"
+              stroke="#3b82f6"
+              strokeWidth="0.7"
+            />
+            <line x1="36" y1="37" x2="34" y2="33" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" />
 
-            {/* Jet Engine */}
-            <rect x="90" y="72" width="20" height="10" rx="3.5" fill="#0f172a" stroke="#60a5fa" strokeWidth="1" />
-            <ellipse cx="91" cy="77" rx="2" ry="5" fill="#38bdf8" />
+            {/* Jet Engine Turbofan */}
+            <rect x="52" y="30" width="18" height="8" rx="3" fill="#0f172a" stroke="#60a5fa" strokeWidth="0.8" />
+            <ellipse cx="69" cy="34" rx="1.8" ry="3.8" fill="#38bdf8" />
+            <ellipse cx="53" cy="34" rx="1" ry="3" fill="#0284c7" />
 
-            {/* Landing Gear Struts & Wheels */}
-            <g stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round">
-              <line x1="36" y1="68" x2="36" y2="80" />
-              <line x1="102" y1="70" x2="102" y2="82" />
+            {/* Landing Gear */}
+            <g stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round">
+              <line x1="98" y1="28" x2="98" y2="37" />
+              <line x1="54" y1="30" x2="54" y2="37" />
             </g>
-            <g fill="#020617" stroke="#cbd5e1" strokeWidth="1">
-              <circle cx="36" cy="82" r="3" />
-              <circle cx="100" cy="84" r="4" />
-              <circle cx="106" cy="84" r="4" />
+
+            {/* Wheels */}
+            <g fill="#0f172a" stroke="#cbd5e1" strokeWidth="0.8">
+              <circle cx="98" cy="38.5" r="2.8" />
+              <circle cx="51.5" cy="38.5" r="3.2" />
+              <circle cx="56.5" cy="38.5" r="3.2" />
             </g>
 
-            {/* Navigation Lights */}
-            <circle cx="180" cy="14" r="2" fill="#ef4444" className="animate-ping" />
-            <circle cx="120" cy="86" r="2" fill="#22c55e" className="animate-ping" />
-            <circle cx="36" cy="78" r="2" fill="#ffffff" className="animate-pulse" />
+            {/* Strobe Lights */}
+            <circle cx="3" cy="3" r="1.5" fill="#ef4444" className="animate-ping" />
+            <circle cx="34" cy="33" r="1.5" fill="#22c55e" className="animate-ping" />
+            <circle cx="98" cy="36" r="1.2" fill="#ffffff" className="animate-pulse" />
+          </g>
 
-            <defs>
-              <linearGradient id="mFuselageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="60%" stopColor="#e2e8f0" />
-                <stop offset="100%" stopColor="#94a3b8" />
-              </linearGradient>
-              <linearGradient id="mTailGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#1e40af" />
-                <stop offset="100%" stopColor="#1e1b4b" />
-              </linearGradient>
-              <linearGradient id="mWingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#cbd5e1" />
-                <stop offset="100%" stopColor="#475569" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
+          <defs>
+            <linearGradient id="skyGradient2D_mob" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#081022" />
+              <stop offset="60%" stopColor="#0d1c3a" />
+              <stop offset="100%" stopColor="#091428" />
+            </linearGradient>
+
+            <linearGradient id="fuselageGradient2D_mob" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="70%" stopColor="#e2e8f0" />
+              <stop offset="100%" stopColor="#94a3b8" />
+            </linearGradient>
+
+            <linearGradient id="tailGradient2D_mob" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1d4ed8" />
+              <stop offset="100%" stopColor="#0f172a" />
+            </linearGradient>
+
+            <linearGradient id="wingGradient2D_mob" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#cbd5e1" />
+              <stop offset="100%" stopColor="#475569" />
+            </linearGradient>
+
+            <linearGradient id="headlightBeam2D_mob" x1="0%" y1="0%" x2="100%" y2="50%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
+              <stop offset="40%" stopColor="#38bdf8" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
 
-      {/* Progress & Telemetry */}
-      <div className="relative z-10 w-full max-w-sm mx-auto mt-3.5 space-y-2.5">
+      {/* Dynamic Status Badges and Animated Progress Bar */}
+      <div className="relative z-10 w-full max-w-md mx-auto mt-4 space-y-3">
         <div>
           <div className="flex items-center justify-between text-xs font-black tracking-wide text-white mb-1">
-            <span className="flex items-center gap-1.5 truncate">
-              <Plane className="w-3.5 h-3.5 text-blue-400 transform -rotate-45 shrink-0" />
-              <span className="truncate">{title}</span>
+            <span className="flex items-center gap-1.5">
+              <Plane className="w-4 h-4 text-blue-400" />
+              <span>{title}</span>
             </span>
-            <span className="font-mono text-amber-400 font-bold shrink-0">{progress}%</span>
+            <span className="font-mono text-amber-400 font-bold">{progress}%</span>
           </div>
 
-          <div className="w-full h-2 bg-slate-900 border border-slate-800 rounded-full overflow-hidden p-0.5 shadow-inner">
+          <div className="w-full h-2.5 bg-slate-900 border border-slate-800 rounded-full overflow-hidden p-0.5 shadow-inner">
             <div
               className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-amber-400 rounded-full transition-all duration-150 relative shadow-md shadow-blue-500/50"
               style={{ width: `${progress}%` }}
             >
-              <div className="absolute right-0 top-0 bottom-0 w-2.5 bg-white/70 animate-pulse rounded-full" />
+              <div className="absolute right-0 top-0 bottom-0 w-3 bg-white/70 animate-pulse rounded-full" />
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border border-slate-800 rounded-xl text-[10px] text-slate-300">
-          <span className="flex items-center gap-1.5 truncate">
-            <Radio className="w-3 h-3 text-blue-400 animate-pulse shrink-0" />
-            <span className="font-semibold truncate">{loadingPhase}</span>
+        {/* Phase subtitle */}
+        <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-[11px] text-slate-300">
+          <span className="flex items-center gap-2">
+            <Radio className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+            <span className="font-semibold">{loadingPhase}</span>
           </span>
-          <span className="text-[9px] font-bold text-slate-500 uppercase shrink-0">AUTOLAND</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">2D APPROACH</span>
         </div>
 
-        <p className="text-[10px] text-center text-slate-400 font-medium">
+        <p className="text-[11px] text-center text-slate-400 font-medium">
           {subtitle}
         </p>
       </div>
