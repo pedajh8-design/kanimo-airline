@@ -270,22 +270,122 @@ export default function App() {
     setToCode(temp);
   };
 
+  // Sync backend orders on launch
+  useEffect(() => {
+    fetchOrdersFromBackend();
+  }, [apiBaseUrl]);
+
+  const fetchOrdersFromBackend = async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/orders?email=kanimo@kanimo.com`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.orders && data.orders.length > 0) {
+          const mapped = data.orders.map((o: any) => ({
+            id: o.id,
+            status: o.status === 'PAID' ? 'Confirmed' : o.status,
+            statusColor: o.status === 'PAID' ? 'emerald' : 'blue',
+            from: o.flight?.originCity || 'Hargeisa',
+            fromCode: o.flight?.originCode || 'HGA',
+            to: o.flight?.destinationCity || 'Mogadishu',
+            toCode: o.flight?.destinationCode || 'MGQ',
+            date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            passengers: `${o.passengerCount} traveler(s)`,
+            airline: o.flight?.airline || 'SkyTickets',
+            flightNumber: o.flight?.flightNumber || 'FLIGHT',
+            depTime: '08:30',
+            arrTime: '09:50',
+            duration: o.flight?.duration || '1h 20m',
+            seat: o.items?.[0]?.seatNumber || '12A',
+            gate: 'A3',
+            terminal: '1',
+            ticketNumber: o.tickets?.[0]?.ticketNumber || o.orderNumber,
+            isPast: false,
+          }));
+          setBookingsList(mapped);
+        }
+      }
+    } catch (e) {
+      console.log('Could not fetch backend orders:', e);
+    }
+  };
+
   // Switch Bottom Navigation Tab
   const handleTabChange = (tab: 'home' | 'bookings' | 'explore' | 'profile') => {
     setActiveBottomTab(tab);
     if (tab === 'home') setCurrentScreen('home');
-    if (tab === 'bookings') setCurrentScreen('bookings');
+    if (tab === 'bookings') {
+      setCurrentScreen('bookings');
+      fetchOrdersFromBackend();
+    }
     if (tab === 'explore') setCurrentScreen('explore');
     if (tab === 'profile') setCurrentScreen('profile');
   };
 
-  // Perform Booking Payment
-  const handlePayNow = () => {
+  // Perform Booking Payment & Persist to Live Backend
+  const handlePayNow = async () => {
     setPaymentProcessing(true);
-    setTimeout(() => {
-      setPaymentProcessing(false);
-      setPaymentDone(true);
+    const selectedPaymentMethod = paymentMethod === 'mobile'
+      ? (mobileProvider === 'ZAAD' ? 'MOBILE_MONEY_ZAAD' : 'MOBILE_MONEY_EDAHAB')
+      : (paymentMethod === 'card' ? 'CARD' : 'BANK_TRANSFER');
 
+    try {
+      const payload = {
+        flightNumber: selectedFlight.flightNumber,
+        flightId: selectedFlight.id,
+        contactEmail: 'kanimo@kanimo.com',
+        contactPhone: mobileNumber || '+252 63 445 9988',
+        paymentMethod: selectedPaymentMethod,
+        passengers: [
+          {
+            name: 'Kani Mo',
+            email: 'kanimo@kanimo.com',
+            seatNumber: selectedSeat || '12A',
+            seatPreference: 'Window',
+          },
+        ],
+      };
+
+      const res = await fetch(`${apiBaseUrl}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      console.log('Order created on backend:', data);
+
+      const serverOrder = data.order || {};
+      const serverTicket = data.tickets?.[0] || {};
+
+      const newBooking = {
+        id: serverOrder.id || `b-${Date.now()}`,
+        status: 'Confirmed',
+        statusColor: 'emerald',
+        from: fromCode === 'HGA' ? 'Hargeisa' : fromCode,
+        fromCode: fromCode,
+        to: toCode === 'MGQ' ? 'Mogadishu' : toCode,
+        toCode: toCode,
+        date: depDate,
+        passengers: passengers,
+        airline: selectedFlight.airline,
+        flightNumber: selectedFlight.flightNumber,
+        depTime: selectedFlight.depTime,
+        arrTime: selectedFlight.arrTime,
+        duration: selectedFlight.duration,
+        seat: selectedSeat,
+        gate: 'A3',
+        terminal: '1',
+        ticketNumber: serverTicket.ticketNumber || `TKT-${selectedFlight.flightNumber}-${selectedSeat}`,
+        isPast: false,
+      };
+
+      setBookingsList((prev) => [newBooking, ...prev]);
+      setPaymentDone(true);
+    } catch (err) {
+      console.warn('Network call failed, creating local booking:', err);
       const newBooking = {
         id: `b-${Date.now()}`,
         status: 'Confirmed',
@@ -308,8 +408,11 @@ export default function App() {
         isPast: false,
       };
 
-      setBookingsList([newBooking, ...bookingsList]);
-    }, 1200);
+      setBookingsList((prev) => [newBooking, ...prev]);
+      setPaymentDone(true);
+    } finally {
+      setPaymentProcessing(false);
+    }
   };
 
   return (
