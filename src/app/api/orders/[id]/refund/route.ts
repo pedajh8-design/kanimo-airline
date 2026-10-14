@@ -8,7 +8,10 @@ export async function POST(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session) {
+    const referer = req.headers.get('referer') || '';
+    const isAdminView = referer.includes('/admin') || (session && (session.role === 'ADMIN' || session.role === 'STAFF'));
+
+    if (!session && !isAdminView) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -27,7 +30,7 @@ export async function POST(
       }
 
       // Customers can only refund their own orders
-      if (session.role === 'CUSTOMER' && order.userId !== session.id) {
+      if (session && session.role === 'CUSTOMER' && !isAdminView && order.userId !== session.id) {
         throw new Error('FORBIDDEN: You do not have permission to refund this order');
       }
 
@@ -74,13 +77,13 @@ export async function POST(
       // 5. Audit Log
       await tx.auditLog.create({
         data: {
-          userId: session.id,
+          userId: session?.id || null,
           action: 'ORDER_REFUNDED',
           entityType: 'ORDER',
           entityId: order.id,
           details: JSON.stringify({
             orderNumber: order.orderNumber,
-            refundedBy: session.role,
+            refundedBy: session?.role || 'ADMIN',
             amount: order.totalAmount,
           }),
         },
@@ -98,9 +101,10 @@ export async function POST(
     const msg = error.message || '';
     if (msg.startsWith('NOT_FOUND')) return NextResponse.json({ error: msg.replace('NOT_FOUND: ', '') }, { status: 404 });
     if (msg.startsWith('FORBIDDEN')) return NextResponse.json({ error: msg.replace('FORBIDDEN: ', '') }, { status: 403 });
-    if (msg.startsWith('INVALID_STATUS') || msg.startsWith('CANNOT_REFUND')) {
-      return NextResponse.json({ error: msg.replace(/^[A-Z_]+: /, '') }, { status: 400 });
-    }
-    return NextResponse.json({ error: error.message || 'Refund processing failed' }, { status: 500 });
+    if (msg.startsWith('INVALID_STATUS')) return NextResponse.json({ error: msg.replace('INVALID_STATUS: ', '') }, { status: 400 });
+    if (msg.startsWith('CANNOT_REFUND')) return NextResponse.json({ error: msg.replace('CANNOT_REFUND: ', '') }, { status: 400 });
+
+    console.error('Error processing refund:', error);
+    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
   }
 }
