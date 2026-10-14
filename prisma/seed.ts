@@ -23,7 +23,7 @@ function generateTicketSecurity(data: {
 }
 
 async function main() {
-  console.log('--- Seeding Kanimo Airline Ticketing Database ---');
+  console.log('--- Seeding SkyTickets Full-Timeline Flight Database (Last Month to Next Year) ---');
 
   // Clear existing records in proper dependency order
   await prisma.auditLog.deleteMany({});
@@ -37,11 +37,11 @@ async function main() {
   await prisma.flight.deleteMany({});
   await prisma.user.deleteMany({});
 
+  const passwordHash = await bcrypt.hash('passenger123', 10);
   const passwordHashAdmin = await bcrypt.hash('admin123', 10);
   const passwordHashStaff = await bcrypt.hash('agent123', 10);
-  const passwordHashCustomer = await bcrypt.hash('passenger123', 10);
 
-  // 1. Create Users
+  // 1. Create Core Users
   const admin = await prisma.user.create({
     data: {
       email: 'admin@kanimo.com',
@@ -62,41 +62,365 @@ async function main() {
     },
   });
 
-  const passenger = await prisma.user.create({
-    data: {
-      email: 'passenger@example.com',
-      password: passwordHashCustomer,
-      name: 'Alexander Mitchell',
-      role: 'CUSTOMER',
-      phone: '+1 (555) 482-9912',
-    },
-  });
-
   const kanimoUser = await prisma.user.create({
     data: {
       email: 'kanimo@kanimo.com',
-      password: passwordHashCustomer,
+      password: passwordHash,
       name: 'Kani Mo',
       role: 'CUSTOMER',
       phone: '+252 63 445 9988',
     },
   });
 
-  const passenger2 = await prisma.user.create({
+  const passengerAlexander = await prisma.user.create({
+    data: {
+      email: 'passenger@example.com',
+      password: passwordHash,
+      name: 'Alexander Mitchell',
+      role: 'CUSTOMER',
+      phone: '+1 (555) 482-9912',
+    },
+  });
+
+  const passengerMaria = await prisma.user.create({
     data: {
       email: 'maria@example.com',
-      password: passwordHashCustomer,
+      password: passwordHash,
       name: 'Maria Gonzalez',
       role: 'CUSTOMER',
       phone: '+1 (555) 991-3420',
     },
   });
 
+  const passengerJama = await prisma.user.create({
+    data: {
+      email: 'jama@example.com',
+      password: passwordHash,
+      name: 'Jama Warsame',
+      role: 'CUSTOMER',
+      phone: '+252 63 412 8877',
+    },
+  });
+
+  const passengerAmina = await prisma.user.create({
+    data: {
+      email: 'amina@example.com',
+      password: passwordHash,
+      name: 'Amina Hassan',
+      role: 'CUSTOMER',
+      phone: '+252 61 599 3322',
+    },
+  });
+
   console.log('Created Users: Admin, Staff, Kani Mo, and Customers');
 
-  // 2. Create Flights
-  const now = new Date();
-  const flightsData = [
+  // 2. Comprehensive Flight Inventory (Past month to Next year 2027)
+  const flightsList = [
+    // -------------------------------------------------------------------------
+    // PAST MONTH: SEPTEMBER 2026 (Completed / Historical Flights)
+    // -------------------------------------------------------------------------
+    {
+      flightNumber: 'D4-SEP-02',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-09-02T08:30:00Z'),
+      arrivalTime: new Date('2026-09-02T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'DEPARTED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Historical September non-stop morning flight.',
+      price: 265.0,
+    },
+    {
+      flightNumber: 'FS-SEP-08',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Hargeisa (HGA)',
+      destinationCode: 'HGA',
+      destinationCity: 'Hargeisa',
+      departureTime: new Date('2026-09-08T15:10:00Z'),
+      arrivalTime: new Date('2026-09-08T16:30:00Z'),
+      duration: '1h 20m',
+      status: 'DEPARTED',
+      terminal: 'Terminal 1',
+      gate: 'A2',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
+      description: 'Historical afternoon return flight.',
+      price: 285.0,
+    },
+    {
+      flightNumber: 'ET-SEP-14',
+      airline: 'Ethiopian Airlines',
+      aircraft: 'Boeing 737-800',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Addis Ababa (ADD)',
+      destinationCode: 'ADD',
+      destinationCity: 'Addis Ababa',
+      departureTime: new Date('2026-09-14T10:15:00Z'),
+      arrivalTime: new Date('2026-09-14T12:45:00Z'),
+      duration: '2h 30m',
+      status: 'DEPARTED',
+      terminal: 'Terminal 1',
+      gate: 'B1',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
+      description: 'September connection to Addis Ababa.',
+      price: 305.0,
+    },
+    {
+      flightNumber: 'KQ-SEP-20',
+      airline: 'SkyTickets Kenya Partner',
+      aircraft: 'Boeing 737-800',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Nairobi (NBO)',
+      destinationCode: 'NBO',
+      destinationCity: 'Nairobi',
+      departureTime: new Date('2026-09-20T11:00:00Z'),
+      arrivalTime: new Date('2026-09-20T19:15:00Z'),
+      duration: '8h 15m',
+      status: 'DEPARTED',
+      terminal: 'Terminal 1',
+      gate: 'B3',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1619865668616-e57caeb67fc1?auto=format&fit=crop&w=1200&q=80',
+      description: 'September regional connection to Nairobi.',
+      price: 730.0,
+    },
+    {
+      flightNumber: 'D4-SEP-26',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-09-26T08:30:00Z'),
+      arrivalTime: new Date('2026-09-26T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'DEPARTED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Late September express service.',
+      price: 270.0,
+    },
+    {
+      flightNumber: 'SK-SEP-30',
+      airline: 'SkyTickets Emirates Partner',
+      aircraft: 'Boeing 777-300ER',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Dubai (DXB)',
+      destinationCode: 'DXB',
+      destinationCity: 'Dubai',
+      departureTime: new Date('2026-09-30T09:00:00Z'),
+      arrivalTime: new Date('2026-09-30T13:45:00Z'),
+      duration: '2h 45m',
+      status: 'DEPARTED',
+      terminal: 'Terminal 2',
+      gate: 'D5',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+      description: 'End of September flight to Dubai.',
+      price: 510.0,
+    },
+
+    // -------------------------------------------------------------------------
+    // CURRENT MONTH: OCTOBER 2026 (Departed, Boarding, and Scheduled)
+    // -------------------------------------------------------------------------
+    {
+      flightNumber: 'FS-OCT-05',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-10-05T11:15:00Z'),
+      arrivalTime: new Date('2026-10-05T12:30:00Z'),
+      duration: '1h 15m',
+      status: 'DEPARTED',
+      terminal: 'Terminal 1',
+      gate: 'A1',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
+      description: 'Early October flight between Hargeisa and Mogadishu.',
+      price: 290.0,
+    },
+    {
+      flightNumber: 'AID-OCT-10',
+      airline: 'Air Djibouti',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-10-10T14:40:00Z'),
+      arrivalTime: new Date('2026-10-10T16:05:00Z'),
+      duration: '1h 25m',
+      status: 'DEPARTED',
+      terminal: 'Terminal 1',
+      gate: 'B2',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1517400508447-88cca558e457?auto=format&fit=crop&w=1200&q=80',
+      description: 'Mid-October regional flight.',
+      price: 315.0,
+    },
+    {
+      flightNumber: 'ET-OCT-14',
+      airline: 'Ethiopian Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Addis Ababa (ADD)',
+      destinationCode: 'ADD',
+      destinationCity: 'Addis Ababa',
+      departureTime: new Date('2026-10-14T10:15:00Z'),
+      arrivalTime: new Date('2026-10-14T12:45:00Z'),
+      duration: '2h 30m',
+      status: 'BOARDING',
+      terminal: 'Terminal 1',
+      gate: 'B1',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
+      description: 'Today flight to Addis Ababa currently boarding at Gate B1.',
+      price: 310.0,
+    },
+    {
+      flightNumber: 'D4-OCT-18',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-10-18T08:30:00Z'),
+      arrivalTime: new Date('2026-10-18T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Upcoming scheduled departure.',
+      price: 275.0,
+    },
+    {
+      flightNumber: 'FS-OCT-24',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Hargeisa (HGA)',
+      destinationCode: 'HGA',
+      destinationCity: 'Hargeisa',
+      departureTime: new Date('2026-10-24T15:10:00Z'),
+      arrivalTime: new Date('2026-10-24T16:30:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A2',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
+      description: 'Late October scheduled service.',
+      price: 298.0,
+    },
+    {
+      flightNumber: 'SK-OCT-28',
+      airline: 'SkyTickets Turkish Partner',
+      aircraft: 'Airbus A330-300',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Istanbul (IST)',
+      destinationCode: 'IST',
+      destinationCity: 'Istanbul',
+      departureTime: new Date('2026-10-28T06:00:00Z'),
+      arrivalTime: new Date('2026-10-28T14:20:00Z'),
+      duration: '6h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'C2',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1200&q=80',
+      description: 'International connection to Istanbul.',
+      price: 680.0,
+    },
+
+    // -------------------------------------------------------------------------
+    // NOVEMBER 2026 (Mockup Core Dates)
+    // -------------------------------------------------------------------------
+    {
+      flightNumber: 'D4-NOV-13',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-11-13T08:30:00Z'),
+      arrivalTime: new Date('2026-11-13T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Friday morning scheduled flight.',
+      price: 320.0,
+    },
+    {
+      flightNumber: 'FS-NOV-14',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-11-14T11:15:00Z'),
+      arrivalTime: new Date('2026-11-14T12:30:00Z'),
+      duration: '1h 15m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A1',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
+      description: 'Saturday express service.',
+      price: 298.0,
+    },
     {
       flightNumber: 'D4721',
       airline: 'Daallo Airlines',
@@ -115,11 +439,8 @@ async function main() {
       gate: 'A3',
       category: 'Regional',
       imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
-      description: 'Morning direct flight from Hargeisa Egal International to Mogadishu Aden Adde International Airport.',
-      tiers: [
-        { name: 'Economy Class', cabinClass: 'ECONOMY', price: 275.0, capacity: 120, reservedCount: 5, soldCount: 45, benefits: 'Cabin baggage 7kg, Checked baggage 20kg included, complimentary refreshment', baggage: '7kg Cabin + 20kg Checked' },
-        { name: 'Business Class', cabinClass: 'BUSINESS', price: 420.0, capacity: 16, reservedCount: 1, soldCount: 8, benefits: 'Priority check-in, lounge access, 30kg baggage, premium refreshment', baggage: '10kg Cabin + 30kg Checked' },
-      ],
+      description: 'Sunday flagship non-stop flight from Hargeisa to Mogadishu.',
+      price: 275.0,
     },
     {
       flightNumber: 'FS312',
@@ -139,11 +460,8 @@ async function main() {
       gate: 'A1',
       category: 'Regional',
       imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
-      description: 'Midday express connection between Hargeisa and Mogadishu with guaranteed on-time departure.',
-      tiers: [
-        { name: 'Economy Class', cabinClass: 'ECONOMY', price: 298.0, capacity: 130, reservedCount: 2, soldCount: 52, benefits: 'Cabin baggage 7kg, Checked baggage 20kg included, in-flight water & snacks', baggage: '7kg Cabin + 20kg Checked' },
-        { name: 'Business Class', cabinClass: 'BUSINESS', price: 450.0, capacity: 12, reservedCount: 0, soldCount: 6, benefits: 'Extra legroom, priority boarding, 30kg baggage', baggage: '10kg Cabin + 30kg Checked' },
-      ],
+      description: 'Sunday midday flight.',
+      price: 298.0,
     },
     {
       flightNumber: 'AID420',
@@ -163,10 +481,8 @@ async function main() {
       gate: 'B2',
       category: 'Regional',
       imageUrl: 'https://images.unsplash.com/photo-1517400508447-88cca558e457?auto=format&fit=crop&w=1200&q=80',
-      description: 'Afternoon non-stop service connecting Somaliland and Somalia with comfortable standard cabin seating.',
-      tiers: [
-        { name: 'Economy Class', cabinClass: 'ECONOMY', price: 320.0, capacity: 110, reservedCount: 1, soldCount: 38, benefits: 'Cabin baggage 7kg, Checked baggage 20kg included', baggage: '7kg Cabin + 20kg Checked' },
-      ],
+      description: 'Sunday afternoon direct flight.',
+      price: 320.0,
     },
     {
       flightNumber: 'ET634',
@@ -186,11 +502,50 @@ async function main() {
       gate: 'C4',
       category: 'Regional',
       imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
-      description: 'Evening Star Alliance non-stop flight featuring Star Alliance frequent flyer points and warm Ethiopian hospitality.',
-      tiers: [
-        { name: 'Economy Class', cabinClass: 'ECONOMY', price: 345.0, capacity: 140, reservedCount: 4, soldCount: 70, benefits: 'Cabin baggage 7kg, 2x23kg checked baggage, full hot meal and drink service', baggage: '7kg Cabin + 2x23kg Checked' },
-        { name: 'Cloud Nine Business', cabinClass: 'BUSINESS', price: 580.0, capacity: 16, reservedCount: 2, soldCount: 10, benefits: 'Cloud Nine VIP treatment, lounge access, 3x32kg luggage, champagne', baggage: '3x32kg Checked' },
-      ],
+      description: 'Sunday evening Star Alliance flight.',
+      price: 345.0,
+    },
+    {
+      flightNumber: 'D4-NOV-16',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-11-16T08:30:00Z'),
+      arrivalTime: new Date('2026-11-16T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Monday express service.',
+      price: 289.0,
+    },
+    {
+      flightNumber: 'ET-NOV-17',
+      airline: 'Ethiopian Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-11-17T18:20:00Z'),
+      arrivalTime: new Date('2026-11-17T19:55:00Z'),
+      duration: '1h 35m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 2',
+      gate: 'C4',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
+      description: 'Tuesday non-stop connection.',
+      price: 310.0,
     },
     {
       flightNumber: 'FS318',
@@ -211,32 +566,7 @@ async function main() {
       category: 'Regional',
       imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
       description: 'Return afternoon flight from Mogadishu to Hargeisa.',
-      tiers: [
-        { name: 'Economy Class', cabinClass: 'ECONOMY', price: 298.0, capacity: 130, reservedCount: 1, soldCount: 60, benefits: 'Cabin baggage 7kg, Checked baggage 20kg included', baggage: '7kg Cabin + 20kg Checked' },
-      ],
-    },
-    {
-      flightNumber: 'ET502',
-      airline: 'Ethiopian Airlines',
-      aircraft: 'Boeing 737-800',
-      origin: 'Hargeisa (HGA)',
-      originCode: 'HGA',
-      originCity: 'Hargeisa',
-      destination: 'Addis Ababa (ADD)',
-      destinationCode: 'ADD',
-      destinationCity: 'Addis Ababa',
-      departureTime: new Date('2026-03-10T10:15:00Z'),
-      arrivalTime: new Date('2026-03-10T12:45:00Z'),
-      duration: '2h 30m',
-      status: 'SCHEDULED',
-      terminal: 'Terminal 1',
-      gate: 'B1',
-      category: 'International',
-      imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
-      description: 'Non-stop morning connection to Bole International Airport Addis Ababa.',
-      tiers: [
-        { name: 'Economy Class', cabinClass: 'ECONOMY', price: 310.0, capacity: 140, reservedCount: 0, soldCount: 95, benefits: 'Baggage 2x23kg included, hot beverage', baggage: '2x23kg Checked' },
-      ],
+      price: 298.0,
     },
     {
       flightNumber: 'SK-DXB',
@@ -256,10 +586,8 @@ async function main() {
       gate: 'D5',
       category: 'International',
       imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
-      description: 'Popular direct sunshine route to Dubai International Airport.',
-      tiers: [
-        { name: 'Economy Round Trip', cabinClass: 'ECONOMY', price: 520.0, capacity: 200, reservedCount: 0, soldCount: 150, benefits: 'Direct flight, in-flight dining, 30kg baggage', baggage: '30kg Checked' },
-      ],
+      description: 'Popular direct route to Dubai International Airport.',
+      price: 520.0,
     },
     {
       flightNumber: 'SK-IST',
@@ -279,10 +607,8 @@ async function main() {
       gate: 'C2',
       category: 'International',
       imageUrl: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1200&q=80',
-      description: 'Connection to Istanbul Airport with award-winning catering.',
-      tiers: [
-        { name: 'Economy Round Trip', cabinClass: 'ECONOMY', price: 680.0, capacity: 180, reservedCount: 0, soldCount: 130, benefits: '1 Stop, 2x23kg baggage, Turkish delight service', baggage: '2x23kg Checked' },
-      ],
+      description: 'Connection to Istanbul Airport.',
+      price: 680.0,
     },
     {
       flightNumber: 'SK-NBO',
@@ -303,9 +629,7 @@ async function main() {
       category: 'International',
       imageUrl: 'https://images.unsplash.com/photo-1619865668616-e57caeb67fc1?auto=format&fit=crop&w=1200&q=80',
       description: 'Regional connection to Jomo Kenyatta International Airport.',
-      tiers: [
-        { name: 'Economy Round Trip', cabinClass: 'ECONOMY', price: 750.0, capacity: 160, reservedCount: 0, soldCount: 110, benefits: '1 Stop, 2x23kg baggage', baggage: '2x23kg Checked' },
-      ],
+      price: 750.0,
     },
     {
       flightNumber: 'SK-LHR',
@@ -326,9 +650,7 @@ async function main() {
       category: 'International',
       imageUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80',
       description: 'Intercontinental flight to London Heathrow.',
-      tiers: [
-        { name: 'Economy Round Trip', cabinClass: 'ECONOMY', price: 820.0, capacity: 220, reservedCount: 0, soldCount: 180, benefits: '1 Stop, full meal service, 2x23kg baggage', baggage: '2x23kg Checked' },
-      ],
+      price: 820.0,
     },
     {
       flightNumber: 'SK-DOH',
@@ -348,11 +670,546 @@ async function main() {
       gate: 'D2',
       category: 'International',
       imageUrl: 'https://images.unsplash.com/photo-1568084680786-a84f91d1153c?auto=format&fit=crop&w=1200&q=80',
-      description: 'Modern 5-star connection to Hamad International Airport Doha.',
-      tiers: [
-        { name: 'Economy Round Trip', cabinClass: 'ECONOMY', price: 640.0, capacity: 190, reservedCount: 0, soldCount: 140, benefits: '1 Stop, 30kg luggage, award-winning Oryx One entertainment', baggage: '30kg Checked' },
-      ],
+      description: 'Modern connection to Hamad International Airport Doha.',
+      price: 640.0,
     },
+    {
+      flightNumber: 'SK-JED-25',
+      airline: 'Daallo Airlines Hajj Partner',
+      aircraft: 'Boeing 737-800',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Jeddah (JED)',
+      destinationCode: 'JED',
+      destinationCity: 'Jeddah',
+      departureTime: new Date('2026-11-25T14:00:00Z'),
+      arrivalTime: new Date('2026-11-25T18:00:00Z'),
+      duration: '4h 00m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A4',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1564769625905-50e93615e769?auto=format&fit=crop&w=1200&q=80',
+      description: 'Pilgrimage and business direct connection to Jeddah King Abdulaziz Airport.',
+      price: 460.0,
+    },
+    {
+      flightNumber: 'SK-CAI-27',
+      airline: 'EgyptAir Partner',
+      aircraft: 'Airbus A320neo',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Cairo (CAI)',
+      destinationCode: 'CAI',
+      destinationCity: 'Cairo',
+      departureTime: new Date('2026-11-27T09:30:00Z'),
+      arrivalTime: new Date('2026-11-27T15:00:00Z'),
+      duration: '5h 30m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'B4',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=1200&q=80',
+      description: 'Non-stop route connecting Mogadishu and Cairo.',
+      price: 580.0,
+    },
+    {
+      flightNumber: 'BSA-101',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Bosaso (BSA)',
+      originCode: 'BSA',
+      originCity: 'Bosaso',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-11-16T08:00:00Z'),
+      arrivalTime: new Date('2026-11-16T09:30:00Z'),
+      duration: '1h 30m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A1',
+      category: 'Domestic',
+      imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
+      description: 'Direct coastal link connecting Bosaso to Mogadishu.',
+      price: 220.0,
+    },
+    {
+      flightNumber: 'GGR-102',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Garowe (GGR)',
+      originCode: 'GGR',
+      originCity: 'Garowe',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-11-17T10:00:00Z'),
+      arrivalTime: new Date('2026-11-17T11:20:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A2',
+      category: 'Domestic',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Puntland capital connection to Mogadishu.',
+      price: 210.0,
+    },
+
+    // -------------------------------------------------------------------------
+    // DECEMBER 2026 (Holiday Season)
+    // -------------------------------------------------------------------------
+    {
+      flightNumber: 'D4-DEC-05',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2026-12-05T08:30:00Z'),
+      arrivalTime: new Date('2026-12-05T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'December holiday service.',
+      price: 285.0,
+    },
+    {
+      flightNumber: 'FS-DEC-12',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Hargeisa (HGA)',
+      destinationCode: 'HGA',
+      destinationCity: 'Hargeisa',
+      departureTime: new Date('2026-12-12T15:10:00Z'),
+      arrivalTime: new Date('2026-12-12T16:30:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A2',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
+      description: 'Mid-December holiday return.',
+      price: 298.0,
+    },
+    {
+      flightNumber: 'SK-DEC-18',
+      airline: 'SkyTickets Flydubai Partner',
+      aircraft: 'Boeing 737 MAX',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Dubai (DXB)',
+      destinationCode: 'DXB',
+      destinationCity: 'Dubai',
+      departureTime: new Date('2026-12-18T12:00:00Z'),
+      arrivalTime: new Date('2026-12-18T16:30:00Z'),
+      duration: '4h 30m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'B2',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+      description: 'Direct holiday sunshine flight to Dubai.',
+      price: 540.0,
+    },
+    {
+      flightNumber: 'ET-DEC-24',
+      airline: 'Ethiopian Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Addis Ababa (ADD)',
+      destinationCode: 'ADD',
+      destinationCity: 'Addis Ababa',
+      departureTime: new Date('2026-12-24T10:15:00Z'),
+      arrivalTime: new Date('2026-12-24T12:45:00Z'),
+      duration: '2h 30m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'B1',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
+      description: 'Christmas Eve regional flagship connection.',
+      price: 330.0,
+    },
+    {
+      flightNumber: 'SK-DEC-31',
+      airline: 'SkyTickets Emirates Partner',
+      aircraft: 'Boeing 777-300ER',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Dubai (DXB)',
+      destinationCode: 'DXB',
+      destinationCity: 'Dubai',
+      departureTime: new Date('2026-12-31T09:00:00Z'),
+      arrivalTime: new Date('2026-12-31T13:45:00Z'),
+      duration: '2h 45m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 2',
+      gate: 'D5',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+      description: 'New Year celebration flight to Dubai.',
+      price: 590.0,
+    },
+
+    // -------------------------------------------------------------------------
+    // YEAR 2027 (NEXT YEAR - FULL YEAR HORIZON)
+    // -------------------------------------------------------------------------
+    {
+      flightNumber: 'D4-2027-JAN',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2027-01-10T08:30:00Z'),
+      arrivalTime: new Date('2027-01-10T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'January 2027 regular departure.',
+      price: 275.0,
+    },
+    {
+      flightNumber: 'FS-2027-JAN',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Hargeisa (HGA)',
+      destinationCode: 'HGA',
+      destinationCity: 'Hargeisa',
+      departureTime: new Date('2027-01-18T15:10:00Z'),
+      arrivalTime: new Date('2027-01-18T16:30:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A2',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
+      description: 'January 2027 return flight.',
+      price: 295.0,
+    },
+    {
+      flightNumber: 'ET-2027-FEB',
+      airline: 'Ethiopian Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Addis Ababa (ADD)',
+      destinationCode: 'ADD',
+      destinationCity: 'Addis Ababa',
+      departureTime: new Date('2027-02-12T10:15:00Z'),
+      arrivalTime: new Date('2027-02-12T12:45:00Z'),
+      duration: '2h 30m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'B1',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
+      description: 'February 2027 regional route.',
+      price: 310.0,
+    },
+    {
+      flightNumber: 'ET502',
+      airline: 'Ethiopian Airlines',
+      aircraft: 'Boeing 737-800',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Addis Ababa (ADD)',
+      destinationCode: 'ADD',
+      destinationCity: 'Addis Ababa',
+      departureTime: new Date('2027-03-10T10:15:00Z'),
+      arrivalTime: new Date('2027-03-10T12:45:00Z'),
+      duration: '2h 30m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'B1',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
+      description: 'Non-stop morning connection to Bole International Airport Addis Ababa.',
+      price: 310.0,
+    },
+    {
+      flightNumber: 'D4-2027-MAR',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2027-03-22T08:30:00Z'),
+      arrivalTime: new Date('2027-03-22T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Spring 2027 flight.',
+      price: 275.0,
+    },
+    {
+      flightNumber: 'SK-2027-APR',
+      airline: 'SkyTickets Turkish Partner',
+      aircraft: 'Airbus A330-300',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Istanbul (IST)',
+      destinationCode: 'IST',
+      destinationCity: 'Istanbul',
+      departureTime: new Date('2027-04-15T06:00:00Z'),
+      arrivalTime: new Date('2027-04-15T14:20:00Z'),
+      duration: '6h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'C2',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1200&q=80',
+      description: 'Spring 2027 connection to Istanbul.',
+      price: 680.0,
+    },
+    {
+      flightNumber: 'FS-2027-MAY',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2027-05-20T11:15:00Z'),
+      arrivalTime: new Date('2027-05-20T12:30:00Z'),
+      duration: '1h 15m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A1',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
+      description: 'May 2027 express route.',
+      price: 298.0,
+    },
+    {
+      flightNumber: 'AID-2027-JUN',
+      airline: 'Air Djibouti',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2027-06-08T14:40:00Z'),
+      arrivalTime: new Date('2027-06-08T16:05:00Z'),
+      duration: '1h 25m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'B2',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1517400508447-88cca558e457?auto=format&fit=crop&w=1200&q=80',
+      description: 'Summer 2027 seasonal route.',
+      price: 320.0,
+    },
+    {
+      flightNumber: 'SK-2027-JUN',
+      airline: 'SkyTickets Emirates Partner',
+      aircraft: 'Boeing 777-300ER',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Dubai (DXB)',
+      destinationCode: 'DXB',
+      destinationCity: 'Dubai',
+      departureTime: new Date('2027-06-25T09:00:00Z'),
+      arrivalTime: new Date('2027-06-25T13:45:00Z'),
+      duration: '2h 45m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 2',
+      gate: 'D5',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+      description: 'Summer holiday 2027 connection to Dubai.',
+      price: 520.0,
+    },
+    {
+      flightNumber: 'D4-2027-JUL',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2027-07-14T08:30:00Z'),
+      arrivalTime: new Date('2027-07-14T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'July 2027 service.',
+      price: 275.0,
+    },
+    {
+      flightNumber: 'ET-2027-AUG',
+      airline: 'Ethiopian Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Addis Ababa (ADD)',
+      destinationCode: 'ADD',
+      destinationCity: 'Addis Ababa',
+      departureTime: new Date('2027-08-20T10:15:00Z'),
+      arrivalTime: new Date('2027-08-20T12:45:00Z'),
+      duration: '2h 30m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'B1',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1200&q=80',
+      description: 'Late summer 2027 route.',
+      price: 310.0,
+    },
+    {
+      flightNumber: 'FS-2027-SEP',
+      airline: 'SkyTickets Kenya Partner',
+      aircraft: 'Boeing 737-800',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Nairobi (NBO)',
+      destinationCode: 'NBO',
+      destinationCity: 'Nairobi',
+      departureTime: new Date('2027-09-10T11:00:00Z'),
+      arrivalTime: new Date('2027-09-10T19:15:00Z'),
+      duration: '8h 15m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'B3',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1619865668616-e57caeb67fc1?auto=format&fit=crop&w=1200&q=80',
+      description: 'September 2027 regional connection.',
+      price: 720.0,
+    },
+    {
+      flightNumber: 'D4-2027-OCT',
+      airline: 'Daallo Airlines',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2027-10-15T08:30:00Z'),
+      arrivalTime: new Date('2027-10-15T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Autumn 2027 regular flight.',
+      price: 280.0,
+    },
+    {
+      flightNumber: 'SK-2027-NOV',
+      airline: 'SkyTickets British Partner',
+      aircraft: 'Boeing 787-9',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'London (LHR)',
+      destinationCode: 'LHR',
+      destinationCity: 'London',
+      departureTime: new Date('2027-11-18T08:00:00Z'),
+      arrivalTime: new Date('2027-11-18T18:30:00Z'),
+      duration: '10h 30m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 2',
+      gate: 'A5',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80',
+      description: 'Late 2027 flight to London Heathrow.',
+      price: 840.0,
+    },
+    {
+      flightNumber: 'D4-2027',
+      airline: 'Daallo Airlines 2027 Flagship',
+      aircraft: 'Boeing 737',
+      origin: 'Hargeisa (HGA)',
+      originCode: 'HGA',
+      originCity: 'Hargeisa',
+      destination: 'Mogadishu (MGQ)',
+      destinationCode: 'MGQ',
+      destinationCity: 'Mogadishu',
+      departureTime: new Date('2027-12-20T08:30:00Z'),
+      arrivalTime: new Date('2027-12-20T09:50:00Z'),
+      duration: '1h 20m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 1',
+      gate: 'A3',
+      category: 'Regional',
+      imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
+      description: 'Late 2027 year-end flight from Hargeisa to Mogadishu.',
+      price: 285.0,
+    },
+    {
+      flightNumber: 'FS-2027-DEC',
+      airline: 'FlySomalia',
+      aircraft: 'Boeing 737',
+      origin: 'Mogadishu (MGQ)',
+      originCode: 'MGQ',
+      originCity: 'Mogadishu',
+      destination: 'Dubai (DXB)',
+      destinationCode: 'DXB',
+      destinationCity: 'Dubai',
+      departureTime: new Date('2027-12-30T09:00:00Z'),
+      arrivalTime: new Date('2027-12-30T13:45:00Z'),
+      duration: '2h 45m',
+      status: 'SCHEDULED',
+      terminal: 'Terminal 2',
+      gate: 'D5',
+      category: 'International',
+      imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+      description: 'Year-end 2027 New Year flight to Dubai.',
+      price: 550.0,
+    },
+
+    // -------------------------------------------------------------------------
+    // TRANSCONTINENTAL FLAGSHIP ROUTES
+    // -------------------------------------------------------------------------
     {
       flightNumber: 'KN-101',
       airline: 'Kanimo Airline',
@@ -363,21 +1220,16 @@ async function main() {
       destination: 'London Heathrow (LHR)',
       destinationCode: 'LHR',
       destinationCity: 'London',
-      departureTime: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000), // +2 days
-      arrivalTime: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000 + 15 * 60 * 1000),
+      departureTime: new Date('2026-11-20T18:00:00Z'),
+      arrivalTime: new Date('2026-11-21T06:15:00Z'),
       duration: '7h 15m',
       status: 'SCHEDULED',
       terminal: 'Terminal 4',
       gate: 'B24',
       category: 'International',
       imageUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80',
-      description: 'Daily non-stop flagship service from New York JFK to London Heathrow with lie-flat suites and high-speed Wi-Fi.',
-      tiers: [
-        { name: 'Economy Classic', cabinClass: 'ECONOMY', price: 420.0, capacity: 160, reservedCount: 1, soldCount: 120, benefits: 'In-flight entertainment, complimentary dining, standard seat selection', baggage: '1 Personal item + 1 Carry-on bag' },
-        { name: 'Premium Comfort', cabinClass: 'PREMIUM_ECONOMY', price: 780.0, capacity: 32, reservedCount: 0, soldCount: 22, benefits: 'Extra legroom (38"), priority boarding, premium meal service, noise-canceling headphones', baggage: '1 Checked bag (23kg) + 1 Carry-on' },
-        { name: 'Business Executive', cabinClass: 'BUSINESS', price: 2150.0, capacity: 28, reservedCount: 0, soldCount: 18, benefits: '180° Lie-flat suite, direct aisle access, Kanimo VIP Lounge, multi-course dining', baggage: '2 Checked bags (32kg each) + 2 Carry-on' },
-        { name: 'Royal First Class', cabinClass: 'FIRST', price: 4600.0, capacity: 6, reservedCount: 0, soldCount: 2, benefits: 'Private enclosed cabin, caviar tasting, personal butler service, chauffeur airport transfer', baggage: '3 Checked bags (32kg each) + complimentary storage' },
-      ],
+      description: 'Daily non-stop flagship service with lie-flat private suites.',
+      price: 420.0,
     },
     {
       flightNumber: 'KN-204',
@@ -389,21 +1241,16 @@ async function main() {
       destination: 'Tokyo Haneda (HND)',
       destinationCode: 'HND',
       destinationCity: 'Tokyo',
-      departureTime: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000 + 1 * 60 * 60 * 1000),
-      arrivalTime: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000 + 30 * 60 * 1000),
+      departureTime: new Date('2026-11-25T11:00:00Z'),
+      arrivalTime: new Date('2026-11-26T15:30:00Z'),
       duration: '10h 30m',
       status: 'SCHEDULED',
       terminal: 'International Terminal A',
       gate: 'A12',
       category: 'International',
       imageUrl: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80',
-      description: 'Ultra-long-range non-stop connection to Tokyo Haneda featuring whisper-quiet cabin pressure and Kaiseki in-flight dining.',
-      tiers: [
-        { name: 'Economy Classic', cabinClass: 'ECONOMY', price: 680.0, capacity: 180, reservedCount: 0, soldCount: 145, benefits: 'Personal HD screen, Japanese & Western meal selection, USB-C fast charging', baggage: '2 Checked bags (23kg each)' },
-        { name: 'Premium Comfort', cabinClass: 'PREMIUM_ECONOMY', price: 1150.0, capacity: 40, reservedCount: 0, soldCount: 30, benefits: 'Dedicated cabin, 40" seat pitch, amenity kit, priority luggage delivery', baggage: '2 Checked bags (23kg each)' },
-        { name: 'Business Executive', cabinClass: 'BUSINESS', price: 3400.0, capacity: 36, reservedCount: 0, soldCount: 24, benefits: 'Private sliding door suite, fine sake cellar, priority immigration fast track', baggage: '2 Checked bags (32kg each)' },
-        { name: 'Royal First Class', cabinClass: 'FIRST', price: 6800.0, capacity: 6, reservedCount: 0, soldCount: 4, benefits: 'Full private bedroom suite, Dom Pérignon vintage champagne, private lounge dining', baggage: '3 Checked bags (32kg each)' },
-      ],
+      description: 'Ultra-long-range non-stop connection to Tokyo Haneda.',
+      price: 680.0,
     },
     {
       flightNumber: 'KN-502',
@@ -415,468 +1262,293 @@ async function main() {
       destination: 'Miami International (MIA)',
       destinationCode: 'MIA',
       destinationCity: 'Miami',
-      departureTime: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
-      arrivalTime: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000 + 15 * 60 * 1000),
+      departureTime: new Date('2026-10-15T14:00:00Z'),
+      arrivalTime: new Date('2026-10-15T17:15:00Z'),
       duration: '3h 15m',
       status: 'BOARDING',
       terminal: 'Terminal 4',
       gate: 'B18',
       category: 'Domestic',
       imageUrl: 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=1200&q=80',
-      description: 'Popular express sunshine corridor between NYC and South Beach Miami. Fast, scenic, and reliable.',
-      tiers: [
-        { name: 'Economy Classic', cabinClass: 'ECONOMY', price: 185.0, capacity: 130, reservedCount: 0, soldCount: 110, benefits: 'Free streaming entertainment, complimentary snacks and beverages', baggage: '1 Carry-on' },
-        { name: 'Premium Comfort', cabinClass: 'PREMIUM_ECONOMY', price: 290.0, capacity: 24, reservedCount: 0, soldCount: 20, benefits: 'Priority boarding, complimentary alcoholic beverages, extra legroom', baggage: '1 Checked bag (23kg)' },
-        { name: 'Business Executive', cabinClass: 'BUSINESS', price: 620.0, capacity: 16, reservedCount: 0, soldCount: 14, benefits: 'First class recliner, hot meal service, dedicated overhead bin', baggage: '2 Checked bags (32kg each)' },
-      ],
-    },
-    {
-      flightNumber: 'KN-308',
-      airline: 'Kanimo Airline',
-      aircraft: 'Boeing 777-300ER',
-      origin: 'Dubai International (DXB)',
-      originCode: 'DXB',
-      originCity: 'Dubai',
-      destination: 'Paris Charles de Gaulle (CDG)',
-      destinationCode: 'CDG',
-      destinationCity: 'Paris',
-      departureTime: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000),
-      arrivalTime: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000 + 10 * 60 * 1000),
-      duration: '7h 10m',
-      status: 'SCHEDULED',
-      terminal: 'Terminal 3',
-      gate: 'C14',
-      category: 'International',
-      imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80',
-      description: 'Luxury continental connection connecting the Gulf to Paris with bespoke French cuisine and Arabic hospitality.',
-      tiers: [
-        { name: 'Economy Classic', cabinClass: 'ECONOMY', price: 490.0, capacity: 210, reservedCount: 0, soldCount: 160, benefits: 'Multi-course menu, 2,000 entertainment channels, complimentary amenity kit', baggage: '1 Checked bag (23kg)' },
-        { name: 'Business Executive', cabinClass: 'BUSINESS', price: 2300.0, capacity: 42, reservedCount: 0, soldCount: 35, benefits: 'Private bar access, lie-flat mattress with turndown service, expedited lounge', baggage: '2 Checked bags (32kg each)' },
-        { name: 'Royal First Class', cabinClass: 'FIRST', price: 5400.0, capacity: 8, reservedCount: 0, soldCount: 6, benefits: 'Private salon cabin, virtual window projection, Michelin-starred customized menu', baggage: '3 Checked bags (32kg each)' },
-      ],
-    },
-    {
-      flightNumber: 'KN-415',
-      airline: 'Kanimo Airline',
-      aircraft: 'Boeing 787-9 Dreamliner',
-      origin: 'Los Angeles (LAX)',
-      originCode: 'LAX',
-      originCity: 'Los Angeles',
-      destination: 'Sydney Kingsford (SYD)',
-      destinationCode: 'SYD',
-      destinationCity: 'Sydney',
-      departureTime: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-      arrivalTime: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000 + 50 * 60 * 1000),
-      duration: '14h 50m',
-      status: 'SCHEDULED',
-      terminal: 'Tom Bradley Int Terminal',
-      gate: 'T150',
-      category: 'Luxury Charter',
-      imageUrl: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=1200&q=80',
-      description: 'Pacific flagship journey crossing the international date line with circadian LED lighting and pressurized cabin serenity.',
-      tiers: [
-        { name: 'Economy Classic', cabinClass: 'ECONOMY', price: 790.0, capacity: 160, reservedCount: 0, soldCount: 120, benefits: '2 hot meals, sleep mask and socks, high-bandwidth satellite internet', baggage: '2 Checked bags (23kg each)' },
-        { name: 'Premium Comfort', cabinClass: 'PREMIUM_ECONOMY', price: 1450.0, capacity: 36, reservedCount: 0, soldCount: 28, benefits: 'Deep recline cradle seat, footrest, priority baggage handling', baggage: '2 Checked bags (23kg each)' },
-        { name: 'Business Executive', cabinClass: 'BUSINESS', price: 4100.0, capacity: 30, reservedCount: 0, soldCount: 22, benefits: 'All-aisle direct suites, sleep pyjamas, Australian wine tasting flights', baggage: '2 Checked bags (32kg each)' },
-      ],
+      description: 'Popular express sunshine corridor between NYC and South Beach Miami.',
+      price: 185.0,
     },
   ];
 
-  for (const f of flightsData) {
-    const { tiers, ...flightFields } = f;
+  console.log(`Creating ${flightsList.length} flights spanning Sep 2026 to Dec 2027...`);
+
+  const createdFlightsMap = new Map<string, any>();
+
+  for (const f of flightsList) {
+    const { price, ...flightFields } = f;
     const flight = await prisma.flight.create({
       data: flightFields,
     });
+    createdFlightsMap.set(flight.flightNumber, flight);
 
-    for (const t of tiers) {
-      await prisma.ticketTier.create({
-        data: {
-          flightId: flight.id,
-          ...t,
-        },
-      });
-    }
+    // Create Economy & Business tiers
+    await prisma.ticketTier.create({
+      data: {
+        flightId: flight.id,
+        name: 'Economy Class',
+        cabinClass: 'ECONOMY',
+        price: price,
+        capacity: 140,
+        reservedCount: 2,
+        soldCount: 35,
+        benefits: 'Cabin baggage 7kg, Checked baggage 20kg included, complimentary refreshment',
+        baggage: '7kg Cabin + 20kg Checked',
+      },
+    });
+
+    await prisma.ticketTier.create({
+      data: {
+        flightId: flight.id,
+        name: 'Business Class',
+        cabinClass: 'BUSINESS',
+        price: Math.round(price * 1.55),
+        capacity: 16,
+        reservedCount: 0,
+        soldCount: 6,
+        benefits: 'Priority check-in, VIP lounge access, 32kg luggage, gourmet refreshment',
+        baggage: '10kg Cabin + 32kg Checked',
+      },
+    });
   }
 
-  console.log('Created 5 flagship flights with ticket tiers');
+  console.log(`Created ${flightsList.length} flights with full ticket tiers.`);
 
-  // 3. Create Sample Bookings & Issued Tickets for Alexander Mitchell
-  const jfkFlight = await prisma.flight.findUnique({ where: { flightNumber: 'KN-101' } });
-  const miaFlight = await prisma.flight.findUnique({ where: { flightNumber: 'KN-502' } });
+  // 3. Create Sample Orders & Issued Tickets across timeline
+  const sampleBookings = [
+    // Past September 2026 Booking
+    {
+      orderNumber: 'ORD-202609-0821',
+      user: kanimoUser,
+      flightNum: 'D4-SEP-02',
+      seat: '14B',
+      status: 'PAID',
+      ticketStatus: 'BOARDED',
+      amount: 265.0,
+      paymentMethod: 'MOBILE_MONEY_ZAAD',
+      createdAt: new Date('2026-09-01T10:14:00Z'),
+    },
+    // Past September 2026 Booking (Alexander)
+    {
+      orderNumber: 'ORD-202609-2044',
+      user: passengerAlexander,
+      flightNum: 'KQ-SEP-20',
+      seat: '5A',
+      status: 'PAID',
+      ticketStatus: 'BOARDED',
+      amount: 730.0,
+      paymentMethod: 'CARD',
+      createdAt: new Date('2026-09-18T14:20:00Z'),
+    },
+    // Early October Booking (Jama)
+    {
+      orderNumber: 'ORD-202610-0518',
+      user: passengerJama,
+      flightNum: 'FS-OCT-05',
+      seat: '10C',
+      status: 'PAID',
+      ticketStatus: 'BOARDED',
+      amount: 290.0,
+      paymentMethod: 'MOBILE_MONEY_EDAHAB',
+      createdAt: new Date('2026-10-04T09:30:00Z'),
+    },
+    // Current Boarding Booking (Maria)
+    {
+      orderNumber: 'ORD-202610-1412',
+      user: passengerMaria,
+      flightNum: 'ET-OCT-14',
+      seat: '11F',
+      status: 'PAID',
+      ticketStatus: 'CHECKED_IN',
+      amount: 310.0,
+      paymentMethod: 'CARD',
+      createdAt: new Date('2026-10-13T16:45:00Z'),
+    },
+    // November Mockup Booking 1 (Kani Mo)
+    {
+      orderNumber: 'ORD-202611-4721',
+      user: kanimoUser,
+      flightNum: 'D4721',
+      seat: '12A',
+      status: 'PAID',
+      ticketStatus: 'ISSUED',
+      amount: 275.0,
+      paymentMethod: 'MOBILE_MONEY_ZAAD',
+      createdAt: new Date('2026-10-14T02:00:00Z'),
+    },
+    // November Mockup Booking 2 (Kani Mo Return)
+    {
+      orderNumber: 'ORD-202611-3182',
+      user: kanimoUser,
+      flightNum: 'FS318',
+      seat: '8F',
+      status: 'PAID',
+      ticketStatus: 'CHECKED_IN',
+      amount: 298.0,
+      paymentMethod: 'MOBILE_MONEY_EDAHAB',
+      createdAt: new Date('2026-10-14T02:10:00Z'),
+    },
+    // December Holiday Booking (Amina)
+    {
+      orderNumber: 'ORD-202612-2410',
+      user: passengerAmina,
+      flightNum: 'ET-DEC-24',
+      seat: '9D',
+      status: 'PAID',
+      ticketStatus: 'ISSUED',
+      amount: 330.0,
+      paymentMethod: 'CARD',
+      createdAt: new Date('2026-10-14T02:20:00Z'),
+    },
+    // Next Year 2027: January Booking (Kani Mo)
+    {
+      orderNumber: 'ORD-202701-1002',
+      user: kanimoUser,
+      flightNum: 'D4-2027-JAN',
+      seat: '12B',
+      status: 'PAID',
+      ticketStatus: 'ISSUED',
+      amount: 275.0,
+      paymentMethod: 'MOBILE_MONEY_ZAAD',
+      createdAt: new Date('2026-10-14T02:30:00Z'),
+    },
+    // Next Year 2027: March Booking (Kani Mo Mockup)
+    {
+      orderNumber: 'ORD-202703-5021',
+      user: kanimoUser,
+      flightNum: 'ET502',
+      seat: '15C',
+      status: 'PAID',
+      ticketStatus: 'ISSUED',
+      amount: 310.0,
+      paymentMethod: 'CARD',
+      createdAt: new Date('2026-10-14T02:40:00Z'),
+    },
+    // Next Year 2027: Summer Dubai Booking (Kani Mo)
+    {
+      orderNumber: 'ORD-202706-2580',
+      user: kanimoUser,
+      flightNum: 'SK-2027-JUN',
+      seat: '14A',
+      status: 'PAID',
+      ticketStatus: 'ISSUED',
+      amount: 520.0,
+      paymentMethod: 'MOBILE_MONEY_ZAAD',
+      createdAt: new Date('2026-10-14T02:50:00Z'),
+    },
+    // Next Year 2027: Late December Flagship (Kani Mo)
+    {
+      orderNumber: 'ORD-202712-2027',
+      user: kanimoUser,
+      flightNum: 'D4-2027',
+      seat: '12A',
+      status: 'PAID',
+      ticketStatus: 'ISSUED',
+      amount: 285.0,
+      paymentMethod: 'MOBILE_MONEY_ZAAD',
+      createdAt: new Date('2026-10-14T03:00:00Z'),
+    },
+  ];
 
-  if (jfkFlight && miaFlight) {
-    const jfkTiers = await prisma.ticketTier.findMany({ where: { flightId: jfkFlight.id } });
-    const miaTiers = await prisma.ticketTier.findMany({ where: { flightId: miaFlight.id } });
+  for (const b of sampleBookings) {
+    const flight = createdFlightsMap.get(b.flightNum);
+    if (!flight) continue;
 
-    const econTier = jfkTiers.find((t) => t.cabinClass === 'ECONOMY') || jfkTiers[0];
-    const bizTier = miaTiers.find((t) => t.cabinClass === 'BUSINESS') || miaTiers[0];
+    const tiers = await prisma.ticketTier.findMany({ where: { flightId: flight.id } });
+    const tier = tiers[0];
 
-    // Order 1: Upcoming flight to London
-    const order1 = await prisma.order.create({
+    const order = await prisma.order.create({
       data: {
-        orderNumber: 'ORD-202610-1011',
-        userId: passenger.id,
-        flightId: jfkFlight.id,
-        totalAmount: econTier.price,
-        status: 'PAID',
-        paymentMethod: 'DEMO_PAYMENT',
+        orderNumber: b.orderNumber,
+        userId: b.user.id,
+        flightId: flight.id,
+        totalAmount: b.amount,
+        status: b.status as any,
+        paymentMethod: b.paymentMethod,
         passengerCount: 1,
-        contactEmail: passenger.email,
-        contactPhone: passenger.phone,
+        contactEmail: b.user.email,
+        contactPhone: b.user.phone,
+        createdAt: b.createdAt,
       },
     });
 
     await prisma.payment.create({
       data: {
-        orderId: order1.id,
-        amount: econTier.price,
+        orderId: order.id,
+        amount: b.amount,
         currency: 'USD',
-        provider: 'DEMO',
-        providerPaymentId: `demo_pay_${Date.now()}_1`,
+        provider: b.paymentMethod.startsWith('MOBILE_') ? 'MOBILE_MONEY' : 'CARD',
+        providerPaymentId: `pay_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
         status: 'SUCCEEDED',
         cardLast4: '4242',
-        cardBrand: 'Visa',
+        cardBrand: b.paymentMethod.startsWith('MOBILE_') ? 'MobileMoney' : 'Visa',
+        receiptUrl: `/orders/${order.id}`,
+        createdAt: b.createdAt,
       },
     });
 
-    const item1 = await prisma.orderItem.create({
+    const item = await prisma.orderItem.create({
       data: {
-        orderId: order1.id,
-        ticketTierId: econTier.id,
-        passengerName: 'Alexander Mitchell',
-        passengerEmail: passenger.email,
-        passportNumber: 'US89218491',
-        seatNumber: '14A',
+        orderId: order.id,
+        ticketTierId: tier.id,
+        passengerName: b.user.name,
+        passengerEmail: b.user.email,
+        passportNumber: 'SL9841029',
+        seatNumber: b.seat,
         seatPreference: 'Window',
-        unitPrice: econTier.price,
+        unitPrice: b.amount,
+        createdAt: b.createdAt,
       },
     });
 
-    const ticketId1 = crypto.randomUUID();
-    const ticketNum1 = 'TKT-KN-94829103';
-    const security1 = generateTicketSecurity({
-      ticketId: ticketId1,
-      ticketNumber: ticketNum1,
-      flightNumber: 'KN-101',
-      passengerName: 'Alexander Mitchell',
-      seatNumber: '14A',
+    const ticketId = crypto.randomUUID();
+    const ticketNumber = `TKT-${flight.flightNumber}-${b.seat}`;
+    const security = generateTicketSecurity({
+      ticketId,
+      ticketNumber,
+      flightNumber: flight.flightNumber,
+      passengerName: b.user.name,
+      seatNumber: b.seat,
     });
 
     await prisma.ticket.create({
       data: {
-        id: ticketId1,
-        ticketNumber: ticketNum1,
-        orderId: order1.id,
-        orderItemId: item1.id,
-        flightId: jfkFlight.id,
-        ticketTierId: econTier.id,
-        userId: passenger.id,
-        passengerName: 'Alexander Mitchell',
-        seatNumber: '14A',
-        boardingGroup: 'Group 3',
-        qrSecurityPayload: security1.payload,
-        securityHash: security1.securityHash,
-        status: 'ISSUED',
+        id: ticketId,
+        ticketNumber,
+        orderId: order.id,
+        orderItemId: item.id,
+        flightId: flight.id,
+        ticketTierId: tier.id,
+        userId: b.user.id,
+        passengerName: b.user.name,
+        seatNumber: b.seat,
+        boardingGroup: 'Group 2',
+        qrSecurityPayload: security.payload,
+        securityHash: security.securityHash,
+        status: b.ticketStatus as any,
+        createdAt: b.createdAt,
       },
     });
-
-    // Order 2: Checked-in Flight to Miami
-    const order2 = await prisma.order.create({
-      data: {
-        orderNumber: 'ORD-202610-5022',
-        userId: passenger.id,
-        flightId: miaFlight.id,
-        totalAmount: bizTier.price,
-        status: 'PAID',
-        paymentMethod: 'DEMO_PAYMENT',
-        passengerCount: 1,
-        contactEmail: passenger.email,
-        contactPhone: passenger.phone,
-      },
-    });
-
-    await prisma.payment.create({
-      data: {
-        orderId: order2.id,
-        amount: bizTier.price,
-        currency: 'USD',
-        provider: 'DEMO',
-        providerPaymentId: `demo_pay_${Date.now()}_2`,
-        status: 'SUCCEEDED',
-        cardLast4: '1088',
-        cardBrand: 'Mastercard',
-      },
-    });
-
-    const item2 = await prisma.orderItem.create({
-      data: {
-        orderId: order2.id,
-        ticketTierId: bizTier.id,
-        passengerName: 'Alexander Mitchell',
-        passengerEmail: passenger.email,
-        passportNumber: 'US89218491',
-        seatNumber: '2B',
-        seatPreference: 'Aisle',
-        unitPrice: bizTier.price,
-      },
-    });
-
-    const ticketId2 = crypto.randomUUID();
-    const ticketNum2 = 'TKT-KN-50291844';
-    const security2 = generateTicketSecurity({
-      ticketId: ticketId2,
-      ticketNumber: ticketNum2,
-      flightNumber: 'KN-502',
-      passengerName: 'Alexander Mitchell',
-      seatNumber: '2B',
-    });
-
-    await prisma.ticket.create({
-      data: {
-        id: ticketId2,
-        ticketNumber: ticketNum2,
-        orderId: order2.id,
-        orderItemId: item2.id,
-        flightId: miaFlight.id,
-        ticketTierId: bizTier.id,
-        userId: passenger.id,
-        passengerName: 'Alexander Mitchell',
-        seatNumber: '2B',
-        boardingGroup: 'Group 1',
-        qrSecurityPayload: security2.payload,
-        securityHash: security2.securityHash,
-        status: 'CHECKED_IN',
-        checkedInAt: new Date(),
-        checkedInByStaffId: staff.id,
-      },
-    });
-
-    console.log('Created sample orders and digital boarding passes for Alexander');
-
-    // Create Sample Bookings for Kani Mo matching Mockup
-    const daalloFlight = await prisma.flight.findUnique({ where: { flightNumber: 'D4721' } });
-    const fsReturnFlight = await prisma.flight.findUnique({ where: { flightNumber: 'FS318' } });
-    const etAddisFlight = await prisma.flight.findUnique({ where: { flightNumber: 'ET502' } });
-
-    if (daalloFlight) {
-      const daalloTiers = await prisma.ticketTier.findMany({ where: { flightId: daalloFlight.id } });
-      const dTier = daalloTiers[0];
-      const kOrder1 = await prisma.order.create({
-        data: {
-          orderNumber: 'ORD-202611-4721',
-          userId: kanimoUser.id,
-          flightId: daalloFlight.id,
-          totalAmount: 275.0,
-          status: 'PAID',
-          paymentMethod: 'MOBILE_MONEY_ZAAD',
-          passengerCount: 1,
-          contactEmail: kanimoUser.email,
-          contactPhone: kanimoUser.phone,
-        },
-      });
-
-      const kItem1 = await prisma.orderItem.create({
-        data: {
-          orderId: kOrder1.id,
-          ticketTierId: dTier.id,
-          passengerName: 'Kani Mo',
-          passengerEmail: kanimoUser.email,
-          passportNumber: 'SL9841029',
-          seatNumber: '12A',
-          seatPreference: 'Window',
-          unitPrice: 275.0,
-        },
-      });
-
-      const kTicketId1 = crypto.randomUUID();
-      const kSecurity1 = generateTicketSecurity({
-        ticketId: kTicketId1,
-        ticketNumber: 'TKT-D4721-12A',
-        flightNumber: 'D4721',
-        passengerName: 'Kani Mo',
-        seatNumber: '12A',
-      });
-
-      await prisma.ticket.create({
-        data: {
-          id: kTicketId1,
-          ticketNumber: 'TKT-D4721-12A',
-          orderId: kOrder1.id,
-          orderItemId: kItem1.id,
-          flightId: daalloFlight.id,
-          ticketTierId: dTier.id,
-          userId: kanimoUser.id,
-          passengerName: 'Kani Mo',
-          seatNumber: '12A',
-          boardingGroup: 'Group 2',
-          qrSecurityPayload: kSecurity1.payload,
-          securityHash: kSecurity1.securityHash,
-          status: 'ISSUED',
-        },
-      });
-    }
-
-    if (fsReturnFlight) {
-      const fsTiers = await prisma.ticketTier.findMany({ where: { flightId: fsReturnFlight.id } });
-      const fsTier = fsTiers[0];
-      const kOrder2 = await prisma.order.create({
-        data: {
-          orderNumber: 'ORD-202611-3182',
-          userId: kanimoUser.id,
-          flightId: fsReturnFlight.id,
-          totalAmount: 298.0,
-          status: 'PAID',
-          paymentMethod: 'MOBILE_MONEY_EDAHAB',
-          passengerCount: 1,
-          contactEmail: kanimoUser.email,
-          contactPhone: kanimoUser.phone,
-        },
-      });
-
-      const kItem2 = await prisma.orderItem.create({
-        data: {
-          orderId: kOrder2.id,
-          ticketTierId: fsTier.id,
-          passengerName: 'Kani Mo',
-          passengerEmail: kanimoUser.email,
-          passportNumber: 'SL9841029',
-          seatNumber: '8F',
-          seatPreference: 'Window',
-          unitPrice: 298.0,
-        },
-      });
-
-      const kTicketId2 = crypto.randomUUID();
-      const kSecurity2 = generateTicketSecurity({
-        ticketId: kTicketId2,
-        ticketNumber: 'TKT-FS318-8F',
-        flightNumber: 'FS318',
-        passengerName: 'Kani Mo',
-        seatNumber: '8F',
-      });
-
-      await prisma.ticket.create({
-        data: {
-          id: kTicketId2,
-          ticketNumber: 'TKT-FS318-8F',
-          orderId: kOrder2.id,
-          orderItemId: kItem2.id,
-          flightId: fsReturnFlight.id,
-          ticketTierId: fsTier.id,
-          userId: kanimoUser.id,
-          passengerName: 'Kani Mo',
-          seatNumber: '8F',
-          boardingGroup: 'Group 1',
-          qrSecurityPayload: kSecurity2.payload,
-          securityHash: kSecurity2.securityHash,
-          status: 'CHECKED_IN',
-          checkedInAt: new Date(),
-        },
-      });
-    }
-
-    if (etAddisFlight) {
-      const etTiers = await prisma.ticketTier.findMany({ where: { flightId: etAddisFlight.id } });
-      const etTier = etTiers[0];
-      const kOrder3 = await prisma.order.create({
-        data: {
-          orderNumber: 'ORD-202603-5021',
-          userId: kanimoUser.id,
-          flightId: etAddisFlight.id,
-          totalAmount: 310.0,
-          status: 'PAID',
-          paymentMethod: 'CARD',
-          passengerCount: 1,
-          contactEmail: kanimoUser.email,
-          contactPhone: kanimoUser.phone,
-        },
-      });
-
-      const kItem3 = await prisma.orderItem.create({
-        data: {
-          orderId: kOrder3.id,
-          ticketTierId: etTier.id,
-          passengerName: 'Kani Mo',
-          passengerEmail: kanimoUser.email,
-          passportNumber: 'SL9841029',
-          seatNumber: '15C',
-          seatPreference: 'Aisle',
-          unitPrice: 310.0,
-        },
-      });
-
-      const kTicketId3 = crypto.randomUUID();
-      const kSecurity3 = generateTicketSecurity({
-        ticketId: kTicketId3,
-        ticketNumber: 'TKT-ET502-15C',
-        flightNumber: 'ET502',
-        passengerName: 'Kani Mo',
-        seatNumber: '15C',
-      });
-
-      await prisma.ticket.create({
-        data: {
-          id: kTicketId3,
-          ticketNumber: 'TKT-ET502-15C',
-          orderId: kOrder3.id,
-          orderItemId: kItem3.id,
-          flightId: etAddisFlight.id,
-          ticketTierId: etTier.id,
-          userId: kanimoUser.id,
-          passengerName: 'Kani Mo',
-          seatNumber: '15C',
-          boardingGroup: 'Group 3',
-          qrSecurityPayload: kSecurity3.payload,
-          securityHash: kSecurity3.securityHash,
-          status: 'BOARDED',
-        },
-      });
-    }
-
-    console.log('Created sample orders and digital boarding passes for Kani Mo');
-
-    // 4. Create Support Ticket with comments
-    const supTicket = await prisma.supportTicket.create({
-      data: {
-        ticketCode: 'SUP-10824',
-        userId: passenger.id,
-        orderId: order1.id,
-        subject: 'Inquiry regarding dietary meal preferences on flight KN-101',
-        category: 'BOOKING_CHANGE',
-        priority: 'MEDIUM',
-        status: 'IN_PROGRESS',
-      },
-    });
-
-    await prisma.supportComment.create({
-      data: {
-        supportTicketId: supTicket.id,
-        userId: passenger.id,
-        message: 'Hello, I booked ticket KN-101 and would like to confirm if gluten-free options will be available in Economy Classic?',
-        isStaffReply: false,
-      },
-    });
-
-    await prisma.supportComment.create({
-      data: {
-        supportTicketId: supTicket.id,
-        userId: staff.id,
-        message: 'Hello Alexander! Yes, we have added a Special Dietary Request (Gluten-Free VGML) to your reservation for seat 14A. You are all set!',
-        isStaffReply: true,
-      },
-    });
-
-    console.log('Created sample customer support ticket and message thread');
   }
 
-  // 5. Audit Log
+  console.log(`Created ${sampleBookings.length} timeline sample orders and tickets.`);
+
+  // 4. Audit Log
   await prisma.auditLog.create({
     data: {
       userId: admin.id,
       action: 'SYSTEM_INITIALIZED',
       entityType: 'FLIGHT',
       entityId: 'SYSTEM',
-      details: JSON.stringify({ message: 'Kanimo Airline platform seeded with flight inventory and initial bookings' }),
+      details: JSON.stringify({
+        message: 'SkyTickets timeline database populated from Sep 2026 to Dec 2027',
+        flightCount: flightsList.length,
+        orderCount: sampleBookings.length,
+      }),
     },
   });
 

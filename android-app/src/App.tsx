@@ -82,14 +82,15 @@ export default function App() {
   // Date strip selection in Search Results
   const [selectedDateIdx, setSelectedDateIdx] = useState(2); // Sun Nov 15 default
   const dateStrip = [
-    { day: 'Fri', date: 'Nov 13', price: '$320' },
-    { day: 'Sat', date: 'Nov 14', price: '$298' },
-    { day: 'Sun', date: 'Nov 15', price: '$275' },
-    { day: 'Mon', date: 'Nov 16', price: '$289' },
-    { day: 'Tue', date: 'Nov 17', price: '$310' },
+    { day: 'Fri', date: 'Nov 13', fullDate: '2026-11-13', price: '$320' },
+    { day: 'Sat', date: 'Nov 14', fullDate: '2026-11-14', price: '$298' },
+    { day: 'Sun', date: 'Nov 15', fullDate: '2026-11-15', price: '$275' },
+    { day: 'Mon', date: 'Nov 16', fullDate: '2026-11-16', price: '$289' },
+    { day: 'Tue', date: 'Nov 17', fullDate: '2026-11-17', price: '$310' },
+    { day: 'All', date: '2026-2027', fullDate: '', price: 'Catalog' },
   ];
 
-  // Mockup flight data
+  // Mockup flight data fallback
   const defaultFlights = [
     {
       id: 'f-d4721',
@@ -165,6 +166,10 @@ export default function App() {
     },
   ];
 
+  // Dynamic Flights from Backend
+  const [flightsList, setFlightsList] = useState<any[]>(defaultFlights);
+  const [isLoadingFlights, setIsLoadingFlights] = useState<boolean>(false);
+
   // Selected Flight in flow
   const [selectedFlight, setSelectedFlight] = useState<any>(defaultFlights[0]);
 
@@ -233,17 +238,17 @@ export default function App() {
       fromCode: 'HGA',
       to: 'Addis Ababa',
       toCode: 'ADD',
-      date: 'Mar 10, 2026',
+      date: 'Sep 14, 2026',
       passengers: '1 Adult',
       airline: 'Ethiopian Airlines',
-      flightNumber: 'ET502',
+      flightNumber: 'ET-SEP-14',
       depTime: '10:15',
       arrTime: '12:45',
       duration: '2h 30m',
       seat: '15C',
       gate: 'C2',
       terminal: '2',
-      ticketNumber: 'TKT-ET502-15C',
+      ticketNumber: 'TKT-ET-SEP-14-15C',
       isPast: true,
     },
   ]);
@@ -263,16 +268,108 @@ export default function App() {
     }
   }, [activeBoardingPass]);
 
+  // Fetch Live Flights from Backend
+  const fetchFlights = async (origin?: string, destination?: string, targetDate?: string) => {
+    setIsLoadingFlights(true);
+    try {
+      const params = new URLSearchParams();
+      if (origin && origin !== 'ALL') params.append('origin', origin);
+      if (destination && destination !== 'ALL') params.append('destination', destination);
+      if (targetDate) params.append('date', targetDate);
+
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(`${apiBaseUrl}/api/flights${qs}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.flights && data.flights.length > 0) {
+          const mapped = data.flights.map((f: any) => {
+            const dep = new Date(f.departureTime);
+            const arr = new Date(f.arrivalTime);
+            const minPrice = f.minPrice || f.tiers?.[0]?.price || 275;
+            return {
+              id: f.id,
+              flightNumber: f.flightNumber,
+              airline: f.airline || 'SkyTickets',
+              from: f.originCode || fromCode,
+              fromCity: f.originCity || 'Hargeisa',
+              to: f.destinationCode || toCode,
+              toCity: f.destinationCity || 'Mogadishu',
+              depTime: dep.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+              arrTime: arr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+              departureDate: dep.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+              duration: f.duration || '1h 20m',
+              stopType: f.stops === 0 || !f.stops ? 'Non-stop' : `${f.stops} stop`,
+              aircraft: f.aircraft || 'Boeing 737',
+              classType: f.tiers?.[0]?.name || 'Economy',
+              price: minPrice,
+              tierId: f.tiers?.[0]?.id,
+              cabinBaggage: '7 kg',
+              checkedBaggage: f.tiers?.[0]?.baggageAllowance || '20 kg (included)',
+              baseFare: Math.round(minPrice * 0.88),
+              taxes: Math.round(minPrice * 0.12),
+              status: f.status,
+            };
+          });
+          setFlightsList(mapped);
+          return;
+        }
+      }
+
+      // If no flights found for that specific pair, fetch broader flights catalog
+      const allRes = await fetch(`${apiBaseUrl}/api/flights`);
+      if (allRes.ok) {
+        const allData = await allRes.json();
+        if (allData.flights && allData.flights.length > 0) {
+          const mappedAll = allData.flights.slice(0, 20).map((f: any) => {
+            const dep = new Date(f.departureTime);
+            const arr = new Date(f.arrivalTime);
+            const minPrice = f.minPrice || f.tiers?.[0]?.price || 275;
+            return {
+              id: f.id,
+              flightNumber: f.flightNumber,
+              airline: f.airline || 'SkyTickets',
+              from: f.originCode || 'HGA',
+              fromCity: f.originCity || 'Hargeisa',
+              to: f.destinationCode || 'MGQ',
+              toCity: f.destinationCity || 'Mogadishu',
+              depTime: dep.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+              arrTime: arr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+              departureDate: dep.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+              duration: f.duration || '1h 20m',
+              stopType: f.stops === 0 || !f.stops ? 'Non-stop' : `${f.stops} stop`,
+              aircraft: f.aircraft || 'Boeing 737',
+              classType: f.tiers?.[0]?.name || 'Economy',
+              price: minPrice,
+              tierId: f.tiers?.[0]?.id,
+              cabinBaggage: '7 kg',
+              checkedBaggage: f.tiers?.[0]?.baggageAllowance || '20 kg (included)',
+              baseFare: Math.round(minPrice * 0.88),
+              taxes: Math.round(minPrice * 0.12),
+              status: f.status,
+            };
+          });
+          setFlightsList(mappedAll);
+        }
+      }
+    } catch (err) {
+      console.warn('Flight fetch failed, keeping fallback list:', err);
+    } finally {
+      setIsLoadingFlights(false);
+    }
+  };
+
   // Swap From / To
   const handleSwap = () => {
     const temp = fromCode;
     setFromCode(toCode);
     setToCode(temp);
+    fetchFlights(toCode, temp);
   };
 
-  // Sync backend orders on launch
+  // Sync backend flights & orders on launch
   useEffect(() => {
     fetchOrdersFromBackend();
+    fetchFlights(fromCode, toCode);
   }, [apiBaseUrl]);
 
   const fetchOrdersFromBackend = async () => {
@@ -281,27 +378,33 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         if (data.orders && data.orders.length > 0) {
-          const mapped = data.orders.map((o: any) => ({
-            id: o.id,
-            status: o.status === 'PAID' ? 'Confirmed' : o.status,
-            statusColor: o.status === 'PAID' ? 'emerald' : 'blue',
-            from: o.flight?.originCity || 'Hargeisa',
-            fromCode: o.flight?.originCode || 'HGA',
-            to: o.flight?.destinationCity || 'Mogadishu',
-            toCode: o.flight?.destinationCode || 'MGQ',
-            date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            passengers: `${o.passengerCount} traveler(s)`,
-            airline: o.flight?.airline || 'SkyTickets',
-            flightNumber: o.flight?.flightNumber || 'FLIGHT',
-            depTime: '08:30',
-            arrTime: '09:50',
-            duration: o.flight?.duration || '1h 20m',
-            seat: o.items?.[0]?.seatNumber || '12A',
-            gate: 'A3',
-            terminal: '1',
-            ticketNumber: o.tickets?.[0]?.ticketNumber || o.orderNumber,
-            isPast: false,
-          }));
+          const mapped = data.orders.map((o: any) => {
+            const flight = o.flight;
+            const departureDate = flight?.departureTime ? new Date(flight.departureTime) : new Date(o.createdAt);
+            const arrivalDate = flight?.arrivalTime ? new Date(flight.arrivalTime) : new Date(o.createdAt);
+            const isPast = departureDate.getTime() < Date.now();
+            return {
+              id: o.id,
+              status: isPast ? 'Past' : (o.status === 'PAID' ? 'Confirmed' : o.status),
+              statusColor: isPast ? 'slate' : (o.status === 'PAID' ? 'emerald' : 'blue'),
+              from: flight?.originCity || 'Hargeisa',
+              fromCode: flight?.originCode || 'HGA',
+              to: flight?.destinationCity || 'Mogadishu',
+              toCode: flight?.destinationCode || 'MGQ',
+              date: departureDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+              passengers: `${o.passengerCount || 1} traveler(s)`,
+              airline: flight?.airline || 'SkyTickets',
+              flightNumber: flight?.flightNumber || 'FLIGHT',
+              depTime: departureDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+              arrTime: arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+              duration: flight?.duration || '1h 20m',
+              seat: o.items?.[0]?.seatNumber || '12A',
+              gate: flight?.gate || 'A3',
+              terminal: flight?.terminal || '1',
+              ticketNumber: o.tickets?.[0]?.ticketNumber || o.orderNumber,
+              isPast,
+            };
+          });
           setBookingsList(mapped);
         }
       }
@@ -333,6 +436,7 @@ export default function App() {
       const payload = {
         flightNumber: selectedFlight.flightNumber,
         flightId: selectedFlight.id,
+        ticketTierId: selectedFlight.tierId,
         contactEmail: 'kanimo@kanimo.com',
         contactPhone: mobileNumber || '+252 63 445 9988',
         paymentMethod: selectedPaymentMethod,
@@ -364,11 +468,11 @@ export default function App() {
         id: serverOrder.id || `b-${Date.now()}`,
         status: 'Confirmed',
         statusColor: 'emerald',
-        from: fromCode === 'HGA' ? 'Hargeisa' : fromCode,
-        fromCode: fromCode,
-        to: toCode === 'MGQ' ? 'Mogadishu' : toCode,
-        toCode: toCode,
-        date: depDate,
+        from: selectedFlight.fromCity || (fromCode === 'HGA' ? 'Hargeisa' : fromCode),
+        fromCode: selectedFlight.from || fromCode,
+        to: selectedFlight.toCity || (toCode === 'MGQ' ? 'Mogadishu' : toCode),
+        toCode: selectedFlight.to || toCode,
+        date: selectedFlight.departureDate || depDate,
         passengers: passengers,
         airline: selectedFlight.airline,
         flightNumber: selectedFlight.flightNumber,
@@ -376,25 +480,27 @@ export default function App() {
         arrTime: selectedFlight.arrTime,
         duration: selectedFlight.duration,
         seat: selectedSeat,
-        gate: 'A3',
-        terminal: '1',
+        gate: selectedFlight.gate || 'A3',
+        terminal: selectedFlight.terminal || '1',
         ticketNumber: serverTicket.ticketNumber || `TKT-${selectedFlight.flightNumber}-${selectedSeat}`,
         isPast: false,
       };
 
       setBookingsList((prev) => [newBooking, ...prev]);
       setPaymentDone(true);
+      // Synchronize orders with backend immediately
+      await fetchOrdersFromBackend();
     } catch (err) {
       console.warn('Network call failed, creating local booking:', err);
       const newBooking = {
         id: `b-${Date.now()}`,
         status: 'Confirmed',
         statusColor: 'emerald',
-        from: fromCode === 'HGA' ? 'Hargeisa' : fromCode,
-        fromCode: fromCode,
-        to: toCode === 'MGQ' ? 'Mogadishu' : toCode,
-        toCode: toCode,
-        date: depDate,
+        from: selectedFlight.fromCity || (fromCode === 'HGA' ? 'Hargeisa' : fromCode),
+        fromCode: selectedFlight.from || fromCode,
+        to: selectedFlight.toCity || (toCode === 'MGQ' ? 'Mogadishu' : toCode),
+        toCode: selectedFlight.to || toCode,
+        date: selectedFlight.departureDate || depDate,
         passengers: passengers,
         airline: selectedFlight.airline,
         flightNumber: selectedFlight.flightNumber,
@@ -521,13 +627,23 @@ export default function App() {
                     <Plane className="w-4 h-4 text-blue-600 shrink-0 transform -rotate-45" />
                     <select
                       value={fromCode}
-                      onChange={(e) => setFromCode(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFromCode(val);
+                        fetchFlights(val, toCode);
+                      }}
                       className="w-full bg-transparent font-bold text-slate-800 text-sm focus:outline-none"
                     >
                       <option value="HGA">Hargeisa (HGA)</option>
                       <option value="MGQ">Mogadishu (MGQ)</option>
                       <option value="ADD">Addis Ababa (ADD)</option>
                       <option value="DXB">Dubai (DXB)</option>
+                      <option value="NBO">Nairobi (NBO)</option>
+                      <option value="IST">Istanbul (IST)</option>
+                      <option value="JED">Jeddah (JED)</option>
+                      <option value="BSA">Bosaso (BSA)</option>
+                      <option value="GGR">Garowe (GGR)</option>
+                      <option value="JFK">New York (JFK)</option>
                     </select>
                   </div>
                 </div>
@@ -550,13 +666,25 @@ export default function App() {
                     <Plane className="w-4 h-4 text-blue-600 shrink-0" />
                     <select
                       value={toCode}
-                      onChange={(e) => setToCode(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setToCode(val);
+                        fetchFlights(fromCode, val);
+                      }}
                       className="w-full bg-transparent font-bold text-slate-800 text-sm focus:outline-none"
                     >
                       <option value="MGQ">Mogadishu (MGQ)</option>
                       <option value="HGA">Hargeisa (HGA)</option>
                       <option value="ADD">Addis Ababa (ADD)</option>
                       <option value="DXB">Dubai (DXB)</option>
+                      <option value="NBO">Nairobi (NBO)</option>
+                      <option value="IST">Istanbul (IST)</option>
+                      <option value="JED">Jeddah (JED)</option>
+                      <option value="DOH">Doha (DOH)</option>
+                      <option value="LHR">London (LHR)</option>
+                      <option value="BSA">Bosaso (BSA)</option>
+                      <option value="GGR">Garowe (GGR)</option>
+                      <option value="MIA">Miami (MIA)</option>
                     </select>
                   </div>
                 </div>
@@ -595,7 +723,10 @@ export default function App() {
 
               {/* Search Flights Button */}
               <button
-                onClick={() => setCurrentScreen('search_results')}
+                onClick={() => {
+                  fetchFlights(fromCode, toCode);
+                  setCurrentScreen('search_results');
+                }}
                 className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-md shadow-blue-600/30 flex items-center justify-center gap-2 transition"
               >
                 <Search className="w-4 h-4" />
@@ -651,9 +782,19 @@ export default function App() {
                 <p className="text-[11px] text-slate-500 font-medium">Nov 15, 2026 • 1 Adult</p>
               </div>
             </div>
-            <button className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
-              <SlidersHorizontal className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchFlights(fromCode, toCode)}
+                className={`w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 ${
+                  isLoadingFlights ? 'animate-spin' : ''
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+              <button className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
+                <SlidersHorizontal className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Horizontal Date Slider Strip */}
@@ -661,7 +802,10 @@ export default function App() {
             {dateStrip.map((item, idx) => (
               <button
                 key={item.date}
-                onClick={() => setSelectedDateIdx(idx)}
+                onClick={() => {
+                  setSelectedDateIdx(idx);
+                  fetchFlights(fromCode, toCode, item.fullDate);
+                }}
                 className={`flex-1 min-w-[62px] py-2 px-1.5 rounded-xl text-center transition ${
                   selectedDateIdx === idx
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
@@ -683,64 +827,84 @@ export default function App() {
 
           {/* Flight Cards List */}
           <div className="p-4 space-y-3.5">
-            {defaultFlights.map((flight) => (
-              <div
-                key={flight.id}
-                className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:shadow-md transition space-y-3"
-              >
-                {/* Airline Title & Code */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <AirlineBadge airline={flight.airline} code={flight.flightNumber} />
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 leading-tight">{flight.airline}</h4>
-                      <span className="text-[11px] text-slate-400 font-medium">{flight.flightNumber}</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-black text-slate-900">${flight.price}</span>
-                  </div>
-                </div>
-
-                {/* Timeline Route Display */}
-                <div className="flex items-center justify-between pt-1">
-                  <div className="text-left">
-                    <span className="text-base font-black text-slate-900 leading-none">{flight.depTime}</span>
-                    <span className="text-[11px] font-bold text-slate-400 block mt-0.5">{flight.from}</span>
-                  </div>
-
-                  <div className="flex-1 px-4 flex flex-col items-center">
-                    <span className="text-[10px] font-semibold text-slate-400">{flight.duration}</span>
-                    <div className="w-full flex items-center my-1">
-                      <div className="w-2 h-2 rounded-full border-2 border-blue-600 bg-white"></div>
-                      <div className="flex-1 border-t border-dashed border-slate-300"></div>
-                      <Plane className="w-3.5 h-3.5 text-blue-600 transform rotate-90 mx-1 shrink-0" />
-                      <div className="flex-1 border-t border-dashed border-slate-300"></div>
-                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                    </div>
-                    <span className="text-[10px] font-medium text-emerald-600">{flight.stopType}</span>
-                  </div>
-
-                  <div className="text-right">
-                    <span className="text-base font-black text-slate-900 leading-none">{flight.arrTime}</span>
-                    <span className="text-[11px] font-bold text-slate-400 block mt-0.5">{flight.to}</span>
-                  </div>
-                </div>
-
-                {/* Action Button */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
-                  <button
-                    onClick={() => {
-                      setSelectedFlight(flight);
-                      setCurrentScreen('flight_details');
-                    }}
-                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm shadow-blue-500/20"
-                  >
-                    Book Now
-                  </button>
-                </div>
+            {isLoadingFlights ? (
+              <div className="py-14 bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2">
+                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+                <span className="text-xs font-semibold text-slate-700">Searching live flight inventory...</span>
               </div>
-            ))}
+            ) : flightsList.length === 0 ? (
+              <div className="py-12 bg-white rounded-2xl p-6 text-center border border-slate-200">
+                <Plane className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <h4 className="font-bold text-slate-800 text-sm">No direct flights found</h4>
+                <p className="text-xs text-slate-400 mt-1">Try another route or tap to view all flights</p>
+                <button
+                  onClick={() => fetchFlights()}
+                  className="mt-3 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl font-bold text-xs"
+                >
+                  View All Available Flights
+                </button>
+              </div>
+            ) : (
+              flightsList.map((flight) => (
+                <div
+                  key={flight.id}
+                  className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:shadow-md transition space-y-3"
+                >
+                  {/* Airline Title & Code */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <AirlineBadge airline={flight.airline} code={flight.flightNumber} />
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 leading-tight">{flight.airline}</h4>
+                        <span className="text-[11px] text-slate-400 font-medium">{flight.flightNumber}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-black text-slate-900">${flight.price}</span>
+                    </div>
+                  </div>
+
+                  {/* Timeline Route Display */}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="text-left">
+                      <span className="text-base font-black text-slate-900 leading-none">{flight.depTime}</span>
+                      <span className="text-[11px] font-bold text-slate-400 block mt-0.5">{flight.from}</span>
+                    </div>
+
+                    <div className="flex-1 px-4 flex flex-col items-center">
+                      <span className="text-[10px] font-semibold text-slate-400">{flight.duration}</span>
+                      <div className="w-full flex items-center my-1">
+                        <div className="w-2 h-2 rounded-full border-2 border-blue-600 bg-white"></div>
+                        <div className="flex-1 border-t border-dashed border-slate-300"></div>
+                        <Plane className="w-3.5 h-3.5 text-blue-600 transform rotate-90 mx-1 shrink-0" />
+                        <div className="flex-1 border-t border-dashed border-slate-300"></div>
+                        <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                      </div>
+                      <span className="text-[10px] font-medium text-emerald-600">{flight.stopType}</span>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-base font-black text-slate-900 leading-none">{flight.arrTime}</span>
+                      <span className="text-[11px] font-bold text-slate-400 block mt-0.5">{flight.to}</span>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 font-medium">{flight.departureDate || depDate}</span>
+                    <button
+                      onClick={() => {
+                        setSelectedFlight(flight);
+                        setCurrentScreen('flight_details');
+                      }}
+                      className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm shadow-blue-500/20"
+                    >
+                      Book Now
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -794,10 +958,10 @@ export default function App() {
               {/* Large Route Display */}
               <div className="flex items-center justify-between border-y border-slate-100 py-4">
                 <div>
-                  <span className="text-2xl font-black text-slate-900 block leading-tight">HGA</span>
-                  <span className="text-xs text-slate-500 block">Hargeisa</span>
+                  <span className="text-2xl font-black text-slate-900 block leading-tight">{selectedFlight.from}</span>
+                  <span className="text-xs text-slate-500 block">{selectedFlight.fromCity || selectedFlight.from}</span>
                   <span className="text-base font-extrabold text-slate-800 block mt-1">{selectedFlight.depTime}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">Sun, Nov 15, 2026</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{selectedFlight.departureDate || depDate}</span>
                 </div>
 
                 <div className="flex-1 px-4 flex flex-col items-center">
@@ -806,10 +970,10 @@ export default function App() {
                 </div>
 
                 <div className="text-right">
-                  <span className="text-2xl font-black text-slate-900 block leading-tight">MGQ</span>
-                  <span className="text-xs text-slate-500 block">Mogadishu</span>
+                  <span className="text-2xl font-black text-slate-900 block leading-tight">{selectedFlight.to}</span>
+                  <span className="text-xs text-slate-500 block">{selectedFlight.toCity || selectedFlight.to}</span>
                   <span className="text-base font-extrabold text-slate-800 block mt-1">{selectedFlight.arrTime}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">Sun, Nov 15, 2026</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{selectedFlight.departureDate || depDate}</span>
                 </div>
               </div>
 
@@ -889,7 +1053,9 @@ export default function App() {
               </button>
               <div>
                 <h3 className="font-extrabold text-base text-slate-900">Select Seat</h3>
-                <p className="text-[11px] text-slate-500 font-medium">HGA ➔ MGQ • Sun, Nov 15 • 1h 20m</p>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {selectedFlight.from} ➔ {selectedFlight.to} • {selectedFlight.departureDate || depDate} • {selectedFlight.duration}
+                </p>
               </div>
             </div>
           </div>
@@ -1122,10 +1288,12 @@ export default function App() {
               </div>
 
               <div>
-                <h4 className="font-extrabold text-base text-slate-900">HGA ➔ MGQ</h4>
-                <p className="text-xs text-slate-500 font-medium">Sun, Nov 15, 2026 • 1 Adult • Seat {selectedSeat}</p>
+                <h4 className="font-extrabold text-base text-slate-900">{selectedFlight.from} ➔ {selectedFlight.to}</h4>
+                <p className="text-xs text-slate-500 font-medium">
+                  {selectedFlight.departureDate || depDate} • {passengers} • Seat {selectedSeat}
+                </p>
                 <p className="text-xs text-blue-600 font-semibold mt-0.5">
-                  ✈ {selectedFlight.airline} {selectedFlight.flightNumber} • Non-stop
+                  ✈ {selectedFlight.airline} {selectedFlight.flightNumber} • {selectedFlight.stopType}
                 </p>
               </div>
 
@@ -1297,8 +1465,8 @@ export default function App() {
               </p>
             </div>
             <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 text-xs text-left space-y-1">
-              <p className="font-bold text-slate-900">Daallo Airlines D4721</p>
-              <p className="text-slate-500">Seat {selectedSeat} • Sun, Nov 15, 2026</p>
+              <p className="font-bold text-slate-900">{selectedFlight.airline} {selectedFlight.flightNumber}</p>
+              <p className="text-slate-500">Seat {selectedSeat} • {selectedFlight.departureDate || depDate}</p>
               <p className="font-bold text-emerald-600">Total Paid: ${selectedFlight.price}</p>
             </div>
             <button

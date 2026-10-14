@@ -12,50 +12,77 @@ export async function GET(req: NextRequest) {
     const cabinClass = searchParams.get('cabinClass');
     const status = searchParams.get('status');
 
-    // Build Prisma where conditions
-    const where: any = {};
+    const dateParam = searchParams.get('date');
+    const qUpper = q?.toUpperCase();
+    const originUpper = origin?.toUpperCase();
+    const destUpper = destination?.toUpperCase();
+
+    // Build Prisma where conditions cleanly using AND array
+    const conditions: any[] = [];
 
     if (category && category !== 'ALL') {
-      where.category = category;
+      conditions.push({ category });
     }
 
     if (status && status !== 'ALL') {
-      where.status = status;
+      conditions.push({ status });
     }
 
     if (q) {
-      where.OR = [
-        { flightNumber: { contains: q } },
-        { origin: { contains: q } },
-        { originCity: { contains: q } },
-        { originCode: { contains: q } },
-        { destination: { contains: q } },
-        { destinationCity: { contains: q } },
-        { destinationCode: { contains: q } },
-        { aircraft: { contains: q } },
-      ];
+      conditions.push({
+        OR: [
+          { flightNumber: { contains: q } },
+          { flightNumber: { contains: qUpper } },
+          { origin: { contains: q } },
+          { originCity: { contains: q } },
+          { originCode: { contains: qUpper } },
+          { destination: { contains: q } },
+          { destinationCity: { contains: q } },
+          { destinationCode: { contains: destUpper } },
+          { aircraft: { contains: q } },
+        ],
+      });
     }
 
     if (origin) {
-      where.OR = [
-        ...(where.OR || []),
-        { originCode: { contains: origin } },
-        { originCity: { contains: origin } },
-        { origin: { contains: origin } },
-      ];
+      conditions.push({
+        OR: [
+          { originCode: { contains: originUpper } },
+          { originCode: { contains: origin } },
+          { originCity: { contains: origin } },
+          { origin: { contains: origin } },
+        ],
+      });
     }
 
     if (destination) {
-      where.AND = [
-        {
-          OR: [
-            { destinationCode: { contains: destination } },
-            { destinationCity: { contains: destination } },
-            { destination: { contains: destination } },
-          ],
-        },
-      ];
+      conditions.push({
+        OR: [
+          { destinationCode: { contains: destUpper } },
+          { destinationCode: { contains: destination } },
+          { destinationCity: { contains: destination } },
+          { destination: { contains: destination } },
+        ],
+      });
     }
+
+    if (dateParam) {
+      const parsedDate = new Date(dateParam);
+      if (!isNaN(parsedDate.getTime())) {
+        const startOfDay = new Date(parsedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(parsedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        conditions.push({
+          departureTime: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+        });
+      }
+    }
+
+    const where = conditions.length > 0 ? { AND: conditions } : {};
 
     const flights = await prisma.flight.findMany({
       where,
