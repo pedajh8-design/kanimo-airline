@@ -188,9 +188,9 @@ export default function HomePage() {
 
           {/* Form Grid */}
           <form onSubmit={handleSearch}>
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-              {/* From Selector (3 cols) */}
-              <div className="md:col-span-3 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
+            <div className="flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-row items-stretch lg:items-center gap-2.5">
+              {/* From Selector */}
+              <div className="flex-[1.15] min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                   From
                 </span>
@@ -199,7 +199,7 @@ export default function HomePage() {
                   <select
                     value={fromCity}
                     onChange={(e) => setFromCity(e.target.value)}
-                    className="w-full bg-transparent font-semibold text-slate-800 text-sm focus:outline-none cursor-pointer"
+                    className="w-full bg-transparent font-semibold text-slate-800 text-sm focus:outline-none cursor-pointer truncate"
                   >
                     {airportOptions.map((opt) => (
                       <option key={opt.code} value={opt.code}>
@@ -210,8 +210,8 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Swap Button (1 col or inline) */}
-              <div className="flex justify-center md:col-span-1">
+              {/* Swap Button */}
+              <div className="flex justify-center items-center shrink-0 sm:col-span-2 lg:col-span-1">
                 <button
                   type="button"
                   onClick={handleSwap}
@@ -222,8 +222,8 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* To Selector (3 cols) */}
-              <div className="md:col-span-3 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
+              {/* To Selector */}
+              <div className="flex-[1.15] min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                   To
                 </span>
@@ -232,7 +232,7 @@ export default function HomePage() {
                   <select
                     value={toCity}
                     onChange={(e) => setToCity(e.target.value)}
-                    className="w-full bg-transparent font-semibold text-slate-800 text-sm focus:outline-none cursor-pointer"
+                    className="w-full bg-transparent font-semibold text-slate-800 text-sm focus:outline-none cursor-pointer truncate"
                   >
                     {airportOptions.map((opt) => (
                       <option key={opt.code} value={opt.code}>
@@ -243,8 +243,8 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Departure Date (2 cols) */}
-              <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
+              {/* Departure Date */}
+              <div className="flex-1 min-w-[155px] bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                   Departure Date
                 </span>
@@ -259,38 +259,38 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Return Date / Passengers (1.5 cols) */}
-              <div className="md:col-span-1.5 lg:col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
+              {/* Return Date (Equal width, readable text) */}
+              <div className="flex-1 min-w-[155px] bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                   Return
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
                   <input
                     type="date"
                     value={returnDate}
                     onChange={(e) => setReturnDate(e.target.value)}
-                    className="w-full bg-transparent font-semibold text-slate-800 text-xs focus:outline-none cursor-pointer"
+                    className="w-full bg-transparent font-semibold text-slate-800 text-sm focus:outline-none cursor-pointer"
                   />
                 </div>
               </div>
 
-              {/* Passengers (1.5 cols) */}
-              <div className="md:col-span-1.5 lg:col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
+              {/* Passengers (Equal width, fully visible 1 Adult label) */}
+              <div className="flex-1 min-w-[145px] bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                   Passengers
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-blue-600 shrink-0" />
                   <select
                     value={passengers}
                     onChange={(e) => setPassengers(e.target.value)}
-                    className="w-full bg-transparent font-semibold text-slate-800 text-xs focus:outline-none cursor-pointer"
+                    className="w-full bg-transparent font-semibold text-slate-800 text-sm focus:outline-none cursor-pointer"
                   >
                     <option value="1 Adult">1 Adult</option>
                     <option value="2 Adults">2 Adults</option>
                     <option value="3 Adults">3 Adults</option>
-                    <option value="Family (2+2)">Family</option>
+                    <option value="Family (2+2)">Family (2+2)</option>
                   </select>
                 </div>
               </div>
