@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
 
     const where = conditions.length > 0 ? { AND: conditions } : {};
 
-    const flights = await prisma.flight.findMany({
+    let flights = await prisma.flight.findMany({
       where,
       include: {
         tiers: {
@@ -93,6 +93,23 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { departureTime: 'asc' },
     });
+
+    let isDateExact = true;
+    // If no flights found for the exact calendar day but route was specified, keep the route!
+    if (flights.length === 0 && dateParam && (origin || destination)) {
+      const relaxedConditions = conditions.filter((c) => !c.departureTime);
+      const relaxedWhere = relaxedConditions.length > 0 ? { AND: relaxedConditions } : {};
+      flights = await prisma.flight.findMany({
+        where: relaxedWhere,
+        include: {
+          tiers: {
+            orderBy: { price: 'asc' },
+          },
+        },
+        orderBy: { departureTime: 'asc' },
+      });
+      isDateExact = false;
+    }
 
     // Format flights with calculated stats (minPrice, availableSeats, formatted date)
     const formatted = flights
@@ -106,7 +123,8 @@ export async function GET(req: NextRequest) {
         const totalSold = f.tiers.reduce((acc, t) => acc + t.soldCount, 0);
         const totalReserved = f.tiers.reduce((acc, t) => acc + t.reservedCount, 0);
         const availableSeats = Math.max(0, totalCapacity - totalSold - totalReserved);
-        const minPrice = f.tiers.length > 0 ? Math.min(...f.tiers.map((t) => t.price)) : 0;
+        const effectiveTiers = matchingTiers.length > 0 ? matchingTiers : f.tiers;
+        const minPrice = effectiveTiers.length > 0 ? Math.min(...effectiveTiers.map((t) => t.price)) : 0;
 
         return {
           ...f,
@@ -126,7 +144,7 @@ export async function GET(req: NextRequest) {
         return true;
       });
 
-    return NextResponse.json({ flights: formatted, count: formatted.length });
+    return NextResponse.json({ flights: formatted, count: formatted.length, isDateExact });
   } catch (error: any) {
     console.error('Error fetching flights:', error);
     return NextResponse.json({ error: error.message || 'Failed to fetch flights' }, { status: 500 });
