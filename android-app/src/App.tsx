@@ -34,6 +34,7 @@ import {
   Users,
   MapPin,
 } from 'lucide-react';
+import AirplaneLandingLoader from './components/AirplaneLandingLoader';
 
 // Authoritative Airport Directory
 interface Airport {
@@ -175,6 +176,16 @@ export default function App() {
   // QR Modal State
   const [activeBoardingPass, setActiveBoardingPass] = useState<any>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Initial App Launch Airplane Landing Loading State
+  const [isInitialLandingLoading, setIsInitialLandingLoading] = useState(true);
+
+  useEffect(() => {
+    const splashTimer = setTimeout(() => {
+      setIsInitialLandingLoading(false);
+    }, 2200);
+    return () => clearTimeout(splashTimer);
+  }, []);
 
   // Computed Values
   const totalPassengers = adults + children + infants;
@@ -610,6 +621,18 @@ export default function App() {
     }
   };
 
+  if (isInitialLandingLoading) {
+    return (
+      <div onClick={() => setIsInitialLandingLoading(false)}>
+        <AirplaneLandingLoader
+          title="Approaching Runway • Preparing for Landing"
+          subtitle="Kanimo Skyways Flight Navigation & Global Reservations"
+          fullScreen={true}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f1f5f9] text-slate-800 antialiased font-sans select-none">
       {/* ======================================================== */}
@@ -991,10 +1014,11 @@ export default function App() {
           {/* Flight Results Content */}
           <div className="p-4 space-y-3.5">
             {isLoadingFlights ? (
-              <div className="py-16 bg-white rounded-3xl border border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 shadow-xs">
-                <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
-                <span className="text-xs font-bold text-slate-700 mt-1">Checking live flight catalog...</span>
-              </div>
+              <AirplaneLandingLoader
+                title="Scanning Flight Corridors • Landing Inventory"
+                subtitle={`Querying live scheduled flights from ${fromAirport.city} (${fromCode}) to ${toAirport.city} (${toCode})...`}
+                fullScreen={false}
+              />
             ) : flightsList.length === 0 ? (
               <div className="py-12 bg-white rounded-3xl p-6 text-center border border-slate-200 space-y-3 shadow-xs">
                 <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
@@ -1702,6 +1726,15 @@ export default function App() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Full-screen Airplane Landing Loader during payment processing */}
+      {paymentProcessing && (
+        <AirplaneLandingLoader
+          title="Securing Reservation • Finalizing Landing"
+          subtitle="Synchronizing your booking & tickets with live Neon PostgreSQL..."
+          fullScreen={true}
+        />
       )}
 
       {/* ======================================================== */}
