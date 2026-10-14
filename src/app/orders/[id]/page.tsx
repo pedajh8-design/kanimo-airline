@@ -17,6 +17,7 @@ import {
   RotateCcw,
   User,
 } from 'lucide-react';
+import AirplaneLandingLoader from '@/components/AirplaneLandingLoader';
 
 function OrderDetailContent({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -84,12 +85,11 @@ function OrderDetailContent({ params }: { params: { id: string } }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-slate-600">Retrieving booking receipt...</p>
-        </div>
-      </div>
+      <AirplaneLandingLoader
+        title="Retrieving Booking Receipt & Pass"
+        subtitle="Checking cryptographic ticket status..."
+        fullScreen={true}
+      />
     );
   }
 
@@ -290,7 +290,7 @@ function OrderDetailContent({ params }: { params: { id: string } }) {
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<AirplaneLandingLoader title="Retrieving Booking Receipt & Pass" fullScreen={true} />}>
       <OrderDetailContent params={params} />
     </Suspense>
   );

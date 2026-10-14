@@ -23,6 +23,7 @@ import {
   Mail,
   Plane,
 } from 'lucide-react';
+import AirplaneLandingLoader from '@/components/AirplaneLandingLoader';
 
 interface OrderItem {
   id: string;
@@ -340,10 +341,20 @@ export default function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {filtered.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500">
-                    {loading ? 'Loading platform orders...' : 'No orders found matching criteria.'}
+                  <td colSpan={8} className="p-4">
+                    <AirplaneLandingLoader
+                      title="Loading Platform Orders Ledger"
+                      subtitle="Synchronizing bookings with Neon PostgreSQL..."
+                      fullScreen={false}
+                    />
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-slate-500 font-semibold text-xs">
+                    No orders found matching criteria.
                   </td>
                 </tr>
               ) : (

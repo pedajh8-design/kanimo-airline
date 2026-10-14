@@ -1839,10 +1839,11 @@ export default function App() {
             {/* Booking Cards */}
             <div className="space-y-3">
               {isLoadingBookings ? (
-                <div className="py-16 bg-white rounded-3xl border border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2">
-                  <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
-                  <span className="text-xs font-bold text-slate-700 mt-1">Fetching live orders...</span>
-                </div>
+                <AirplaneLandingLoader
+                  title="Fetching Customer Orders"
+                  subtitle="Retrieving reservations from Neon PostgreSQL..."
+                  fullScreen={false}
+                />
               ) : bookingsList.filter((b) => (bookingFilter === 'upcoming' ? !b.isPast : b.isPast)).length === 0 ? (
                 <div className="py-12 bg-white rounded-3xl p-6 text-center border border-slate-200 space-y-2">
                   <Ticket className="w-8 h-8 text-slate-300 mx-auto mb-1" />

@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   Luggage,
 } from 'lucide-react';
+import AirplaneLandingLoader from '@/components/AirplaneLandingLoader';
 
 function FlightsContent() {
   const searchParams = useSearchParams();
@@ -174,11 +175,11 @@ function FlightsContent() {
 
         {/* Results Stream */}
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-44 bg-slate-200 animate-pulse rounded-2xl" />
-            ))}
-          </div>
+          <AirplaneLandingLoader
+            title="Scanning Flight Corridors • Landing Inventory"
+            subtitle="Querying live scheduled flights across partner airlines..."
+            fullScreen={false}
+          />
         ) : error ? (
           <div className="p-8 text-center bg-white rounded-2xl border border-rose-200 text-rose-600">
             <AlertCircle className="w-8 h-8 mx-auto mb-2" />
@@ -324,7 +325,7 @@ function FlightsContent() {
 
 export default function FlightsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<AirplaneLandingLoader title="Querying Global Flight Inventory" fullScreen={true} />}>
       <FlightsContent />
     </Suspense>
   );

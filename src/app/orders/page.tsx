@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
+import AirplaneLandingLoader from '@/components/AirplaneLandingLoader';
 
 export default function OrdersPage() {
   const { user, isLoading } = useAuth();
@@ -49,12 +50,11 @@ export default function OrdersPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-slate-600">Retrieving order history & receipts...</p>
-        </div>
-      </div>
+      <AirplaneLandingLoader
+        title="Retrieving Orders & Digital Boarding Passes"
+        subtitle="Connecting to Kanimo satellite ledger..."
+        fullScreen={true}
+      />
     );
   }
 

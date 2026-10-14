@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   AlertCircle,
 } from 'lucide-react';
+import AirplaneLandingLoader from '@/components/AirplaneLandingLoader';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,9 +23,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <AirplaneLandingLoader
+        title="Admin Security Clearance • Verifying"
+        subtitle="Connecting to Kanimo Flight Operations & Ledger..."
+        fullScreen={true}
+      />
     );
   }
 

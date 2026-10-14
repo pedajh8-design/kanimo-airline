@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Luggage,
 } from 'lucide-react';
+import AirplaneLandingLoader from '@/components/AirplaneLandingLoader';
 
 export default function WalletPage() {
   const { user, isLoading } = useAuth();
@@ -52,12 +53,11 @@ export default function WalletPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-slate-600">Opening Digital Wallet & Boarding Passes...</p>
-        </div>
-      </div>
+      <AirplaneLandingLoader
+        title="Opening Digital Wallet & Boarding Passes"
+        subtitle="Retrieving Kanimo miles and offline tickets..."
+        fullScreen={true}
+      />
     );
   }
 

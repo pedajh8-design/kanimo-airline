@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/auth-context';
 import { Plane, Lock, Mail, ArrowRight, AlertCircle, Shield, CheckCircle } from 'lucide-react';
+import AirplaneLandingLoader from '@/components/AirplaneLandingLoader';
 
 function LoginContent() {
   const router = useRouter();
@@ -186,7 +187,13 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-[85vh] bg-slate-950 flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}>
+    <Suspense fallback={
+      <AirplaneLandingLoader
+        title="Member Security Check • Authenticating"
+        subtitle="Verifying credentials and Kanimo boarding credentials..."
+        fullScreen={true}
+      />
+    }>
       <LoginContent />
     </Suspense>
   );

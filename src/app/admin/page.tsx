@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Activity,
 } from 'lucide-react';
+import AirplaneLandingLoader from '@/components/AirplaneLandingLoader';
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -42,8 +43,12 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      <div className="py-6">
+        <AirplaneLandingLoader
+          title="Loading Operations Analytics & Telemetry"
+          subtitle="Computing real-time passenger loads and revenue..."
+          fullScreen={false}
+        />
       </div>
     );
   }
